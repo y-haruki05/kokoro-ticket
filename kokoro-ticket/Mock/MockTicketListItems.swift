@@ -77,7 +77,8 @@ enum MockTicketListItems {
             counterpartLabel: "差出人",
             createdAt: daysAgo(10),
             status: .used,
-            category: .used,
+            usedAt: daysAgo(1),
+            category: .received,
             design: TicketDesign(backgroundColor: .lightPink, borderStyle: .simple)
         )
     ]
