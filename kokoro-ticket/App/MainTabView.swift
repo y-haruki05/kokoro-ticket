@@ -14,7 +14,13 @@ struct MainTabView: View {
                 placeholderScreen(title: "チケット")
                     .tag(AppTab.tickets)
 
-                placeholderScreen(title: "チケットを作る")
+                NavigationStack {
+                    TicketIllustrationSelectionView(
+                        onBack: {
+                            selection = .home
+                        }
+                    )
+                }
                     .tag(AppTab.create)
 
                 placeholderScreen(title: "思い出")
@@ -25,7 +31,9 @@ struct MainTabView: View {
             }
             .toolbar(.hidden, for: .tabBar)
 
-            AppTabBar(selection: $selection)
+            if selection != .create {
+                AppTabBar(selection: $selection)
+            }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
