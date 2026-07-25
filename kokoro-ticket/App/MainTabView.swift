@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selection: AppTab = .home
+    @State private var savedTickets: [TicketCreationDraftSnapshot] = []
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -15,6 +16,9 @@ struct MainTabView: View {
                     .tag(AppTab.tickets)
 
                 TicketCreationFlowView(
+                    onSave: { ticket in
+                        savedTickets.append(ticket)
+                    },
                     onClose: {
                         selection = .home
                     }

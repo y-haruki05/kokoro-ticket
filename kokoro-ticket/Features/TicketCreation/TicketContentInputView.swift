@@ -1,26 +1,9 @@
 import SwiftUI
 
 struct TicketContentInputView: View {
+    @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void
-    let onNext: (TicketContent) -> Void
-
-    @State private var ticketTitle: String
-    @State private var message: String
-    @State private var sender: String
-    @State private var receiver: String
-
-    init(
-        initialContent: TicketContent = TicketContent(),
-        onBack: @escaping () -> Void,
-        onNext: @escaping (TicketContent) -> Void = { _ in }
-    ) {
-        self.onBack = onBack
-        self.onNext = onNext
-        _ticketTitle = State(initialValue: initialContent.ticketTitle)
-        _message = State(initialValue: initialContent.message)
-        _sender = State(initialValue: initialContent.sender)
-        _receiver = State(initialValue: initialContent.receiver)
-    }
+    var onNext: () -> Void = {}
 
     var body: some View {
         ScrollView {
@@ -38,25 +21,25 @@ struct TicketContentInputView: View {
                         TicketInputField(
                             title: "チケット名",
                             placeholder: "肩たたき券",
-                            text: $ticketTitle
+                            text: $draft.ticketTitle
                         )
 
                         TicketMessageInputField(
                             title: "メッセージ",
                             placeholder: "ありがとうの気持ちを書こう",
-                            text: $message
+                            text: $draft.message
                         )
 
                         TicketInputField(
                             title: "差出人",
                             placeholder: "ゆうせい",
-                            text: $sender
+                            text: $draft.sender
                         )
 
                         TicketInputField(
                             title: "宛先",
                             placeholder: "おかあさん",
-                            text: $receiver
+                            text: $draft.receiver
                         )
                     }
                 }
@@ -70,16 +53,7 @@ struct TicketContentInputView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TicketCreationNavigationButtons(
                 onBack: onBack,
-                onNext: {
-                    onNext(
-                        TicketContent(
-                            ticketTitle: ticketTitle,
-                            message: message,
-                            sender: sender,
-                            receiver: receiver
-                        )
-                    )
-                }
+                onNext: onNext
             )
         }
     }
@@ -87,6 +61,9 @@ struct TicketContentInputView: View {
 
 #Preview {
     NavigationStack {
-        TicketContentInputView(onBack: {})
+        TicketContentInputView(
+            draft: TicketCreationDraft(),
+            onBack: {}
+        )
     }
 }

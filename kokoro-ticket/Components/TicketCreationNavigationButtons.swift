@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TicketCreationNavigationButtons: View {
+    var primaryTitle = "次へ"
     let onBack: () -> Void
     let onNext: () -> Void
 
@@ -21,7 +22,7 @@ struct TicketCreationNavigationButtons: View {
 
             Button(action: onNext) {
                 buttonLabel(
-                    "次へ",
+                    primaryTitle,
                     foregroundColor: .white,
                     backgroundColor: AppColors.primary
                 )
