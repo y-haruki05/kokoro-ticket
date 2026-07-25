@@ -2,7 +2,9 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selection: AppTab = .home
-    @State private var savedTickets: [TicketListItem] = []
+    @State private var ticketStore = TicketStore(
+        tickets: MockTicketListItems.items
+    )
     @State private var isShowingTicketDetail = false
 
     var body: some View {
@@ -15,7 +17,7 @@ struct MainTabView: View {
 
                 NavigationStack {
                     TicketListView(
-                        tickets: MockTicketListItems.items + savedTickets,
+                        store: ticketStore,
                         onCreateTicket: {
                             selection = .create
                         },
@@ -28,7 +30,7 @@ struct MainTabView: View {
 
                 TicketCreationFlowView(
                     onSave: { ticket in
-                        savedTickets.append(TicketListItem(savedTicket: ticket))
+                        ticketStore.add(savedTicket: ticket)
                     },
                     onClose: {
                         selection = .home

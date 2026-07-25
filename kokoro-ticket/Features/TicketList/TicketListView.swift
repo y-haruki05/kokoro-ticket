@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TicketListView: View {
-    let tickets: [TicketListItem]
+    let store: TicketStore
     let onCreateTicket: () -> Void
     var onDetailVisibilityChange: (Bool) -> Void = { _ in }
 
@@ -25,7 +25,7 @@ struct TicketListView: View {
                 } else {
                     LazyVStack(spacing: 14) {
                         ForEach(filteredTickets) { ticket in
-                            NavigationLink(value: ticket) {
+                            NavigationLink(value: ticket.id) {
                                 TicketListCardView(ticket: ticket)
                             }
                             .buttonStyle(.plain)
@@ -40,8 +40,8 @@ struct TicketListView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
-        .navigationDestination(for: TicketListItem.self) { ticket in
-            TicketDetailView(ticket: ticket)
+        .navigationDestination(for: TicketListItem.ID.self) { ticketID in
+            TicketDetailView(ticketID: ticketID, store: store)
                 .onAppear {
                     onDetailVisibilityChange(true)
                 }
@@ -52,8 +52,17 @@ struct TicketListView: View {
     }
 
     private var filteredTickets: [TicketListItem] {
-        tickets
-            .filter { $0.category == selectedCategory }
+        store.tickets
+            .filter { ticket in
+                switch selectedCategory {
+                case .received:
+                    ticket.category == .received
+                case .sent:
+                    ticket.category == .sent
+                case .used:
+                    ticket.isUsed
+                }
+            }
             .sorted { $0.createdAt > $1.createdAt }
     }
 }
@@ -61,7 +70,7 @@ struct TicketListView: View {
 #Preview {
     NavigationStack {
         TicketListView(
-            tickets: MockTicketListItems.items,
+            store: TicketStore(tickets: MockTicketListItems.items),
             onCreateTicket: {}
         )
     }

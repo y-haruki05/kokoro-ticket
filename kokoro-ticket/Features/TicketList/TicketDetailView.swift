@@ -1,44 +1,64 @@
 import SwiftUI
 
 struct TicketDetailView: View {
-    let ticket: TicketListItem
-    var onUseTicket: (TicketListItem) -> Void = { _ in }
+    let ticketID: TicketListItem.ID
+    let store: TicketStore
 
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingUseConfirmation = false
+    @State private var isShowingUseCompletion = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                TicketDetailHeaderView {
-                    dismiss()
-                }
+        Group {
+            if let ticket = store.ticket(id: ticketID) {
+                ScrollView {
+                    VStack(spacing: 28) {
+                        TicketDetailHeaderView {
+                            dismiss()
+                        }
 
-                TicketDetailCardView(ticket: ticket)
+                        TicketDetailCardView(ticket: ticket)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 24)
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    bottomAction(for: ticket)
+                }
+            } else {
+                unavailableContent
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            bottomAction
-        }
         .confirmationDialog(
             "このチケットを使用しますか？",
             isPresented: $isShowingUseConfirmation,
             titleVisibility: .visible
         ) {
             Button("使用する") {
-                onUseTicket(ticket)
+                useTicket()
             }
             Button("キャンセル", role: .cancel) {}
+        }
+        .overlay {
+            if isShowingUseCompletion {
+                Text("チケットを使用しました")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 15)
+                    .background(AppColors.textSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: AppColors.shadow, radius: 10, y: 5)
+                    .transition(.opacity)
+            }
         }
     }
 
     @ViewBuilder
-    private var bottomAction: some View {
+    private func bottomAction(for ticket: TicketListItem) -> some View {
         if ticket.status == .unused {
             Button {
                 isShowingUseConfirmation = true
@@ -66,10 +86,46 @@ struct TicketDetailView: View {
                 .background(.ultraThinMaterial)
         }
     }
+
+    private var unavailableContent: some View {
+        VStack(spacing: 18) {
+            TicketDetailHeaderView {
+                dismiss()
+            }
+
+            Spacer()
+
+            Text("チケットが見つかりません")
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+    }
+
+    private func useTicket() {
+        guard store.markAsUsed(id: ticketID) else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isShowingUseCompletion = true
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isShowingUseCompletion = false
+            }
+        }
+    }
 }
 
 #Preview {
     NavigationStack {
-        TicketDetailView(ticket: MockTicketListItems.items[0])
+        TicketDetailView(
+            ticketID: MockTicketListItems.items[0].id,
+            store: TicketStore(tickets: MockTicketListItems.items)
+        )
     }
 }

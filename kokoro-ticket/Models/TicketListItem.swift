@@ -23,7 +23,8 @@ struct TicketListItem: Identifiable, Hashable {
     let counterpartName: String
     let counterpartLabel: String
     let createdAt: Date
-    let status: TicketUsageStatus
+    var isUsed: Bool
+    var usedAt: Date?
     let category: TicketListCategory
     let design: TicketDesign
 
@@ -38,6 +39,7 @@ struct TicketListItem: Identifiable, Hashable {
         counterpartLabel: String,
         createdAt: Date,
         status: TicketUsageStatus,
+        usedAt: Date? = nil,
         category: TicketListCategory,
         design: TicketDesign
     ) {
@@ -50,7 +52,8 @@ struct TicketListItem: Identifiable, Hashable {
         self.counterpartName = counterpartName
         self.counterpartLabel = counterpartLabel
         self.createdAt = createdAt
-        self.status = status
+        self.isUsed = status == .used
+        self.usedAt = usedAt
         self.category = category
         self.design = design
     }
@@ -78,5 +81,9 @@ struct TicketListItem: Identifiable, Hashable {
             sender: senderName,
             receiver: receiverName
         )
+    }
+
+    var status: TicketUsageStatus {
+        isUsed ? .used : .unused
     }
 }

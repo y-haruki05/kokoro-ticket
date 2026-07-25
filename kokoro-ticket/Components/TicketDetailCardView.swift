@@ -38,6 +38,18 @@ struct TicketDetailCardView: View {
                 TicketStatusLabel(status: ticket.status)
             }
 
+            if let usedAt = ticket.usedAt {
+                HStack {
+                    metadata(
+                        title: "使用日時",
+                        value: usedAt.formatted(date: .numeric, time: .shortened)
+                    )
+
+                    Spacer()
+                }
+                .padding(.top, -4)
+            }
+
             HStack(spacing: 10) {
                 designDetail(
                     title: "背景色",
