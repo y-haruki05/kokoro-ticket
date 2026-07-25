@@ -9,23 +9,83 @@ final class InMemoryTicketRepository: TicketRepository {
     }
 
     func fetchAll() throws -> [Ticket] {
-        tickets.sorted { $0.createdAt > $1.createdAt }
+        tickets.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     func insert(_ ticket: Ticket) throws {
         tickets.append(ticket)
     }
 
-    func markAsUsed(id: UUID, at usedAt: Date) throws -> Bool {
-        guard
-            let ticket = tickets.first(where: { $0.id == id }),
-            !ticket.isUsed
-        else {
-            return false
-        }
+    func updateDraft(
+        id: UUID,
+        title: String,
+        message: String,
+        at updatedAt: Date
+    ) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        ticket.ticketTitle = title
+        ticket.message = message
+        ticket.updatedAt = updatedAt
+    }
 
-        ticket.isUsed = true
-        ticket.usedAt = usedAt
-        return true
+    func deleteDraft(id: UUID) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        tickets.removeAll { $0.id == id }
+    }
+
+    func send(id: UUID, to friend: Friend, at sentAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        ticket.receiverName = friend.displayName
+        ticket.sentAt = sentAt
+        transition(ticket, to: .sent, at: sentAt)
+    }
+
+    func receive(id: UUID, at receivedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .sent)
+        ticket.receivedAt = receivedAt
+        transition(ticket, to: .received, at: receivedAt)
+    }
+
+    func requestUsage(id: UUID, at requestedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .received)
+        ticket.requestedAt = requestedAt
+        transition(ticket, to: .requested, at: requestedAt)
+    }
+
+    func complete(id: UUID, at completedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .requested)
+        ticket.completedAt = completedAt
+        transition(ticket, to: .completed, at: completedAt)
+    }
+
+    private func fetchTicket(id: UUID) throws -> Ticket {
+        guard let ticket = tickets.first(where: { $0.id == id }) else {
+            throw TicketRepositoryError.ticketNotFound
+        }
+        return ticket
+    }
+
+    private func require(_ ticket: Ticket, status: TicketStatus) throws {
+        guard ticket.status == status else {
+            throw TicketRepositoryError.invalidTransition(
+                expected: status,
+                actual: ticket.status
+            )
+        }
+    }
+
+    private func transition(
+        _ ticket: Ticket,
+        to status: TicketStatus,
+        at date: Date
+    ) {
+        ticket.status = status
+        ticket.updatedAt = date
     }
 }

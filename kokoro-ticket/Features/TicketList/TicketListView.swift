@@ -5,7 +5,7 @@ struct TicketListView: View {
     let onCreateTicket: () -> Void
     var onDetailVisibilityChange: (Bool) -> Void = { _ in }
 
-    @State private var selectedCategory: TicketListCategory = .received
+    @State private var selectedStatus: TicketStatus = .draft
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,8 +16,7 @@ struct TicketListView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 22)
 
-            TicketListSegmentedControl(selection: $selectedCategory)
-                .padding(.horizontal, 20)
+            TicketListSegmentedControl(selection: $selectedStatus)
 
             ScrollView {
                 if filteredTickets.isEmpty {
@@ -52,18 +51,7 @@ struct TicketListView: View {
     }
 
     private var filteredTickets: [TicketListItem] {
-        store.tickets
-            .filter { ticket in
-                switch selectedCategory {
-                case .received:
-                    ticket.category == .received
-                case .sent:
-                    ticket.category == .sent
-                case .used:
-                    ticket.isUsed
-                }
-            }
-            .sorted { $0.createdAt > $1.createdAt }
+        store.tickets(for: selectedStatus)
     }
 }
 

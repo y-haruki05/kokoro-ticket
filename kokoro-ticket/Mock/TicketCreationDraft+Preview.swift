@@ -4,8 +4,6 @@ extension TicketCreationDraft {
         draft.selectedIllustration = TicketIllustration(id: "preview")
         draft.ticketTitle = "肩たたき券"
         draft.message = "いつもありがとう"
-        draft.sender = "ゆうせい"
-        draft.receiver = "おかあさん"
         draft.selectedBackgroundColor = .lightBlue
         draft.selectedBorderStyle = .roundedBold
         return draft

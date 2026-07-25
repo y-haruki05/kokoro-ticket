@@ -1,53 +1,59 @@
 import SwiftUI
 
 struct TicketListSegmentedControl: View {
-    @Binding var selection: TicketListCategory
+    @Binding var selection: TicketStatus
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(TicketListCategory.allCases) { category in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        selection = category
-                    }
-                } label: {
-                    VStack(spacing: 10) {
-                        Text(category.rawValue)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(TicketStatus.allCases) { status in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            selection = status
+                        }
+                    } label: {
+                        Text(status.displayName)
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(
-                                selection == category
-                                    ? AppColors.primary
+                                selection == status
+                                    ? Color.white
                                     : AppColors.textSecondary
                             )
-
-                        Capsule()
-                            .fill(
-                                selection == category
+                            .padding(.horizontal, 16)
+                            .frame(height: 42)
+                            .background(
+                                selection == status
                                     ? AppColors.primary
-                                    : Color.clear
+                                    : AppColors.cardBackground
                             )
-                            .frame(height: 3)
+                            .clipShape(Capsule())
+                            .overlay {
+                                Capsule()
+                                    .stroke(
+                                        selection == status
+                                            ? AppColors.primary
+                                            : AppColors.border,
+                                        lineWidth: 1
+                                    )
+                            }
+                            .contentShape(Capsule())
                     }
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(
+                        selection == status ? .isSelected : []
+                    )
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(
-                    selection == category ? .isSelected : []
-                )
             }
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(AppColors.border.opacity(0.55))
-                .frame(height: 1)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 2)
         }
     }
 }
 
 #Preview {
-    @Previewable @State var selection = TicketListCategory.received
+    @Previewable @State var selection = TicketStatus.draft
 
     TicketListSegmentedControl(selection: $selection)
-        .padding()
+        .padding(.vertical)
+        .background(AppColors.background)
 }

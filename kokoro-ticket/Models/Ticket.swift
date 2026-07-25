@@ -1,47 +1,80 @@
 import Foundation
 import SwiftData
 
+enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
+    case draft
+    case sent
+    case received
+    case requested
+    case completed
+
+    var id: Self { self }
+
+    var displayName: String {
+        switch self {
+        case .draft: "作り置き"
+        case .sent: "送った"
+        case .received: "受け取った"
+        case .requested: "リクエスト中"
+        case .completed: "完了"
+        }
+    }
+
+    var statusLabel: String {
+        self == .requested ? "実行待ち" : displayName
+    }
+}
+
 @Model
 final class Ticket {
     @Attribute(.unique) var id: UUID
     var ticketTitle: String
     var message: String
-    var sender: String
-    var receiver: String
+    var senderName: String
+    var receiverName: String?
     var illustration: String?
     var backgroundColor: String
     var borderStyle: String
-    var isUsed: Bool
+    var statusRawValue: String
     var createdAt: Date
-    var usedAt: Date?
-    var category: String
+    var updatedAt: Date
+    var sentAt: Date?
+    var receivedAt: Date?
+    var requestedAt: Date?
+    var completedAt: Date?
 
     init(
         id: UUID = UUID(),
         ticketTitle: String,
         message: String,
-        sender: String,
-        receiver: String,
+        senderName: String,
+        receiverName: String? = nil,
         illustration: String?,
         backgroundColor: String,
         borderStyle: String,
-        isUsed: Bool = false,
+        status: TicketStatus = .draft,
         createdAt: Date = .now,
-        usedAt: Date? = nil,
-        category: String
+        updatedAt: Date = .now,
+        sentAt: Date? = nil,
+        receivedAt: Date? = nil,
+        requestedAt: Date? = nil,
+        completedAt: Date? = nil
     ) {
         self.id = id
         self.ticketTitle = ticketTitle
         self.message = message
-        self.sender = sender
-        self.receiver = receiver
+        self.senderName = senderName
+        self.receiverName = receiverName
         self.illustration = illustration
         self.backgroundColor = backgroundColor
         self.borderStyle = borderStyle
-        self.isUsed = isUsed
+        self.statusRawValue = status.rawValue
         self.createdAt = createdAt
-        self.usedAt = usedAt
-        self.category = category
+        self.updatedAt = updatedAt
+        self.sentAt = sentAt
+        self.receivedAt = receivedAt
+        self.requestedAt = requestedAt
+        self.completedAt = completedAt
     }
 
     convenience init(
@@ -54,20 +87,19 @@ final class Ticket {
             id: id,
             ticketTitle: title,
             message: message,
-            sender: senderName,
-            receiver: "",
+            senderName: senderName,
             illustration: nil,
             backgroundColor: TicketBackgroundColor.white.rawValue,
-            borderStyle: TicketBorderStyle.simple.rawValue,
-            category: TicketListCategory.received.rawValue
+            borderStyle: TicketBorderStyle.simple.rawValue
         )
+    }
+
+    var status: TicketStatus {
+        get { TicketStatus(rawValue: statusRawValue) ?? .draft }
+        set { statusRawValue = newValue.rawValue }
     }
 
     var title: String {
         ticketTitle
-    }
-
-    var senderName: String {
-        sender
     }
 }

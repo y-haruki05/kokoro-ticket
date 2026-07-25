@@ -1,30 +1,20 @@
 import SwiftUI
 
 struct TicketStatusLabel: View {
-    let status: TicketUsageStatus
+    let status: TicketStatus
 
     var body: some View {
-        Text(status.rawValue)
+        Text(status.statusLabel)
             .font(.system(size: 11, weight: .bold, design: .rounded))
-            .foregroundStyle(
-                status == .unused
-                    ? AppColors.primaryDark
-                    : AppColors.textSecondary
-            )
+            .foregroundStyle(status == .completed ? AppColors.textSecondary : AppColors.primaryDark)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(
-                status == .unused
-                    ? AppColors.primarySoft
-                    : AppColors.background
-            )
+            .background(status == .completed ? AppColors.background : AppColors.primarySoft)
             .clipShape(Capsule())
             .overlay {
                 Capsule()
                     .stroke(
-                        status == .unused
-                            ? AppColors.primary
-                            : AppColors.border,
+                        status == .completed ? AppColors.border : AppColors.primary,
                         lineWidth: 1
                     )
             }
@@ -33,8 +23,9 @@ struct TicketStatusLabel: View {
 
 #Preview {
     HStack {
-        TicketStatusLabel(status: .unused)
-        TicketStatusLabel(status: .used)
+        ForEach(TicketStatus.allCases) { status in
+            TicketStatusLabel(status: status)
+        }
     }
     .padding()
 }

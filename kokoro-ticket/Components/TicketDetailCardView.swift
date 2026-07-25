@@ -24,7 +24,7 @@ struct TicketDetailCardView: View {
 
             HStack(alignment: .top, spacing: 16) {
                 personDetail(title: "差出人", value: ticket.senderName)
-                personDetail(title: "宛先", value: ticket.receiverName)
+                personDetail(title: "宛先", value: ticket.receiverName ?? "送り先未選択")
             }
 
             HStack {
@@ -38,13 +38,35 @@ struct TicketDetailCardView: View {
                 TicketStatusLabel(status: ticket.status)
             }
 
-            if let usedAt = ticket.usedAt {
+            if let sentAt = ticket.sentAt {
                 HStack {
                     metadata(
-                        title: "使用日時",
-                        value: usedAt.formatted(date: .numeric, time: .shortened)
+                        title: "送信日時",
+                        value: sentAt.formatted(date: .numeric, time: .shortened)
                     )
 
+                    Spacer()
+                }
+                .padding(.top, -4)
+            }
+
+            if let requestedAt = ticket.requestedAt {
+                HStack {
+                    metadata(
+                        title: "リクエスト日時",
+                        value: requestedAt.formatted(date: .numeric, time: .shortened)
+                    )
+                    Spacer()
+                }
+                .padding(.top, -4)
+            }
+
+            if let completedAt = ticket.completedAt {
+                HStack {
+                    metadata(
+                        title: "完了日時",
+                        value: completedAt.formatted(date: .numeric, time: .shortened)
+                    )
                     Spacer()
                 }
                 .padding(.top, -4)

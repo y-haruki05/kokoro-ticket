@@ -22,19 +22,13 @@ struct TicketDesignPreviewView: View {
                     .lineLimit(2)
             }
 
-            HStack {
-                detailLabel(
-                    title: "差出人",
-                    value: content.sender.valueOrFallback("ゆうせい")
-                )
-
-                Spacer()
-
-                detailLabel(
-                    title: "宛先",
-                    value: content.receiver.valueOrFallback("おかあさん")
-                )
-            }
+            Text("作り置きチケット")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.primaryDark)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(AppColors.primarySoft)
+                .clipShape(Capsule())
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -55,16 +49,6 @@ struct TicketDesignPreviewView: View {
         )
     }
 
-    private func detailLabel(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(AppColors.textSecondary)
-            Text(value)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-        }
-    }
 }
 
 private extension String {

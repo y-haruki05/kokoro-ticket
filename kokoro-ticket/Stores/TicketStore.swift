@@ -5,12 +5,20 @@ import Observation
 @Observable
 final class TicketStore {
     private(set) var tickets: [TicketListItem] = []
+    private(set) var lastErrorMessage: String?
 
     @ObservationIgnored
     private let repository: any TicketRepository
 
-    init(repository: any TicketRepository) {
+    @ObservationIgnored
+    private let localSenderName: String
+
+    init(
+        repository: any TicketRepository,
+        localSenderName: String = "ゆうせい"
+    ) {
         self.repository = repository
+        self.localSenderName = localSenderName
         reload()
     }
 
@@ -22,41 +30,97 @@ final class TicketStore {
         )
     }
 
+    func tickets(for status: TicketStatus) -> [TicketListItem] {
+        tickets
+            .filter { $0.status == status }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
     func ticket(id: TicketListItem.ID) -> TicketListItem? {
         tickets.first { $0.id == id }
     }
 
-    func add(savedTicket: TicketCreationDraftSnapshot, createdAt: Date = .now) {
-        do {
+    @discardableResult
+    func add(
+        savedTicket: TicketCreationDraftSnapshot,
+        createdAt: Date = .now
+    ) -> Bool {
+        perform {
             try repository.insert(
-                Ticket(savedTicket: savedTicket, createdAt: createdAt)
+                Ticket(
+                    savedTicket: savedTicket,
+                    senderName: localSenderName,
+                    createdAt: createdAt
+                )
             )
-            reload()
-        } catch {
-            assertionFailure("チケットの保存に失敗しました: \(error)")
         }
     }
 
     @discardableResult
-    func markAsUsed(id: TicketListItem.ID, at usedAt: Date = .now) -> Bool {
-        do {
-            let didUpdate = try repository.markAsUsed(id: id, at: usedAt)
-            if didUpdate {
-                reload()
-            }
-            return didUpdate
-        } catch {
-            assertionFailure("チケットの更新に失敗しました: \(error)")
-            return false
+    func updateDraft(id: UUID, title: String, message: String) -> Bool {
+        perform {
+            try repository.updateDraft(
+                id: id,
+                title: title,
+                message: message,
+                at: .now
+            )
+        }
+    }
+
+    @discardableResult
+    func deleteDraft(id: UUID) -> Bool {
+        perform {
+            try repository.deleteDraft(id: id)
+        }
+    }
+
+    @discardableResult
+    func send(id: UUID, to friend: Friend) -> Bool {
+        perform {
+            try repository.send(id: id, to: friend, at: .now)
+        }
+    }
+
+    @discardableResult
+    func receive(id: UUID) -> Bool {
+        perform {
+            try repository.receive(id: id, at: .now)
+        }
+    }
+
+    @discardableResult
+    func requestUsage(id: UUID) -> Bool {
+        perform {
+            try repository.requestUsage(id: id, at: .now)
+        }
+    }
+
+    @discardableResult
+    func complete(id: UUID) -> Bool {
+        perform {
+            try repository.complete(id: id, at: .now)
         }
     }
 
     func reload() {
         do {
             tickets = try repository.fetchAll().map(TicketListItem.init(ticket:))
+            lastErrorMessage = nil
         } catch {
-            assertionFailure("チケットの読み込みに失敗しました: \(error)")
-            tickets = []
+            lastErrorMessage = "チケットの読み込みに失敗しました"
+        }
+    }
+
+    @discardableResult
+    private func perform(_ operation: () throws -> Void) -> Bool {
+        do {
+            try operation()
+            reload()
+            return true
+        } catch {
+            lastErrorMessage = "チケットを更新できませんでした"
+            return false
         }
     }
 }
