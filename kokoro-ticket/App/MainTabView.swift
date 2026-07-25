@@ -2,10 +2,14 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selection: AppTab = .home
-    @State private var ticketStore = TicketStore(
-        tickets: MockTicketListItems.items
-    )
+    @State private var ticketStore: TicketStore
     @State private var isShowingTicketDetail = false
+
+    init(repository: any TicketRepository) {
+        _ticketStore = State(
+            initialValue: TicketStore(repository: repository)
+        )
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -160,5 +164,9 @@ private struct AppTabBar: View {
 }
 
 #Preview {
-    MainTabView()
+    MainTabView(
+        repository: InMemoryTicketRepository(
+            tickets: MockTicketListItems.items.map(Ticket.init(item:))
+        )
+    )
 }
