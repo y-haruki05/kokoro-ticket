@@ -6,6 +6,7 @@ struct TicketCreationFlowView: View {
     @State private var path: [TicketCreationRoute] = []
     @State private var selectedIllustration: TicketIllustration?
     @State private var ticketContent = TicketContent()
+    @State private var ticketDesign = TicketDesign()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -28,7 +29,18 @@ struct TicketCreationFlowView: View {
                         }
                     )
                 case .design:
-                    TicketDesignPlaceholderView(onBack: navigateBack)
+                    TicketDesignSelectionView(
+                        illustration: selectedIllustration,
+                        content: ticketContent,
+                        initialDesign: ticketDesign,
+                        onBack: navigateBack,
+                        onNext: { design in
+                            ticketDesign = design
+                            path.append(.confirmation)
+                        }
+                    )
+                case .confirmation:
+                    TicketConfirmationPlaceholderView(onBack: navigateBack)
                 }
             }
         }
@@ -43,20 +55,21 @@ struct TicketCreationFlowView: View {
 private enum TicketCreationRoute: Hashable {
     case contentInput
     case design
+    case confirmation
 }
 
-private struct TicketDesignPlaceholderView: View {
+private struct TicketConfirmationPlaceholderView: View {
     let onBack: () -> Void
 
     var body: some View {
         VStack(spacing: 28) {
             TicketCreationHeaderView(onBack: onBack)
 
-            TicketCreationStepIndicatorView(activeStep: 3)
+            TicketCreationStepIndicatorView(activeStep: 4)
 
             Spacer()
 
-            Text("デザイン画面は今後実装予定です")
+            Text("確認画面は今後実装予定です")
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColors.textSecondary)
 

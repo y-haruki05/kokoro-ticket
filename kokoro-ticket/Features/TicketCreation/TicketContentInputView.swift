@@ -68,54 +68,20 @@ struct TicketContentInputView: View {
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            navigationButtons
-        }
-    }
-
-    private var navigationButtons: some View {
-        HStack(spacing: 14) {
-            Button(action: onBack) {
-                Text("戻る")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .contentShape(Rectangle())
-            }
-            .foregroundStyle(AppColors.primaryDark)
-            .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(AppColors.border, lineWidth: 1.5)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                onNext(
-                    TicketContent(
-                        ticketTitle: ticketTitle,
-                        message: message,
-                        sender: sender,
-                        receiver: receiver
+            TicketCreationNavigationButtons(
+                onBack: onBack,
+                onNext: {
+                    onNext(
+                        TicketContent(
+                            ticketTitle: ticketTitle,
+                            message: message,
+                            sender: sender,
+                            receiver: receiver
+                        )
                     )
-                )
-            } label: {
-                Text("次へ")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .contentShape(Rectangle())
-            }
-            .foregroundStyle(.white)
-            .background(AppColors.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: AppColors.shadow, radius: 8, y: 4)
-            .buttonStyle(.plain)
+                }
+            )
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(.ultraThinMaterial)
     }
 }
 
