@@ -57,17 +57,18 @@ struct TicketIllustrationSelectionView: View {
         } label: {
             Text("次へ")
                 .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
+                .background(
+                    selectedIllustration == nil
+                        ? AppColors.textSecondary.opacity(0.35)
+                        : AppColors.primary
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .background(
-            selectedIllustration == nil
-                ? AppColors.textSecondary.opacity(0.35)
-                : AppColors.primary
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 18))
         .disabled(selectedIllustration == nil)
         .padding(.horizontal, 20)
         .padding(.top, 12)
