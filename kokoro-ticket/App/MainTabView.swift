@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selection: AppTab = .home
-    @State private var savedTickets: [TicketCreationDraftSnapshot] = []
+    @State private var savedTickets: [TicketListItem] = []
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -12,12 +12,19 @@ struct MainTabView: View {
                 }
                 .tag(AppTab.home)
 
-                placeholderScreen(title: "チケット")
+                NavigationStack {
+                    TicketListView(
+                        tickets: MockTicketListItems.items + savedTickets,
+                        onCreateTicket: {
+                            selection = .create
+                        }
+                    )
+                }
                     .tag(AppTab.tickets)
 
                 TicketCreationFlowView(
                     onSave: { ticket in
-                        savedTickets.append(ticket)
+                        savedTickets.append(TicketListItem(savedTicket: ticket))
                     },
                     onClose: {
                         selection = .home
