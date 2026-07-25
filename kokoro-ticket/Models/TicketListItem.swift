@@ -74,6 +74,29 @@ struct TicketListItem: Identifiable, Hashable {
         )
     }
 
+    init(ticket: Ticket) {
+        let category = TicketListCategory(rawValue: ticket.category) ?? .sent
+
+        self.init(
+            id: ticket.id,
+            illustration: ticket.illustration.map(TicketIllustration.init(id:)),
+            title: ticket.ticketTitle,
+            message: ticket.message,
+            senderName: ticket.sender,
+            receiverName: ticket.receiver,
+            counterpartName: category == .received ? ticket.sender : ticket.receiver,
+            counterpartLabel: category == .received ? "差出人" : "宛先",
+            createdAt: ticket.createdAt,
+            status: ticket.isUsed ? .used : .unused,
+            usedAt: ticket.usedAt,
+            category: category,
+            design: TicketDesign(
+                backgroundColor: TicketBackgroundColor(rawValue: ticket.backgroundColor) ?? .white,
+                borderStyle: TicketBorderStyle(rawValue: ticket.borderStyle) ?? .simple
+            )
+        )
+    }
+
     var content: TicketContent {
         TicketContent(
             ticketTitle: title,
@@ -85,5 +108,41 @@ struct TicketListItem: Identifiable, Hashable {
 
     var status: TicketUsageStatus {
         isUsed ? .used : .unused
+    }
+}
+
+extension Ticket {
+    convenience init(
+        savedTicket: TicketCreationDraftSnapshot,
+        createdAt: Date = .now
+    ) {
+        self.init(
+            ticketTitle: savedTicket.content.ticketTitle,
+            message: savedTicket.content.message,
+            sender: savedTicket.content.sender,
+            receiver: savedTicket.content.receiver,
+            illustration: savedTicket.selectedIllustration?.id,
+            backgroundColor: savedTicket.design.backgroundColor.rawValue,
+            borderStyle: savedTicket.design.borderStyle.rawValue,
+            createdAt: createdAt,
+            category: TicketListCategory.sent.rawValue
+        )
+    }
+
+    convenience init(item: TicketListItem) {
+        self.init(
+            id: item.id,
+            ticketTitle: item.title,
+            message: item.message,
+            sender: item.senderName,
+            receiver: item.receiverName,
+            illustration: item.illustration?.id,
+            backgroundColor: item.design.backgroundColor.rawValue,
+            borderStyle: item.design.borderStyle.rawValue,
+            isUsed: item.isUsed,
+            createdAt: item.createdAt,
+            usedAt: item.usedAt,
+            category: item.category.rawValue
+        )
     }
 }
