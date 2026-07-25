@@ -18,32 +18,41 @@ struct TicketListItem: Identifiable, Hashable {
     let illustration: TicketIllustration?
     let title: String
     let message: String
+    let senderName: String
+    let receiverName: String
     let counterpartName: String
     let counterpartLabel: String
     let createdAt: Date
     let status: TicketUsageStatus
     let category: TicketListCategory
+    let design: TicketDesign
 
     init(
         id: UUID = UUID(),
         illustration: TicketIllustration?,
         title: String,
         message: String,
+        senderName: String,
+        receiverName: String,
         counterpartName: String,
         counterpartLabel: String,
         createdAt: Date,
         status: TicketUsageStatus,
-        category: TicketListCategory
+        category: TicketListCategory,
+        design: TicketDesign
     ) {
         self.id = id
         self.illustration = illustration
         self.title = title
         self.message = message
+        self.senderName = senderName
+        self.receiverName = receiverName
         self.counterpartName = counterpartName
         self.counterpartLabel = counterpartLabel
         self.createdAt = createdAt
         self.status = status
         self.category = category
+        self.design = design
     }
 
     init(savedTicket: TicketCreationDraftSnapshot, createdAt: Date = .now) {
@@ -51,11 +60,23 @@ struct TicketListItem: Identifiable, Hashable {
             illustration: savedTicket.selectedIllustration,
             title: savedTicket.content.ticketTitle,
             message: savedTicket.content.message,
+            senderName: savedTicket.content.sender,
+            receiverName: savedTicket.content.receiver,
             counterpartName: savedTicket.content.receiver,
             counterpartLabel: "宛先",
             createdAt: createdAt,
             status: .unused,
-            category: .sent
+            category: .sent,
+            design: savedTicket.design
+        )
+    }
+
+    var content: TicketContent {
+        TicketContent(
+            ticketTitle: title,
+            message: message,
+            sender: senderName,
+            receiver: receiverName
         )
     }
 }

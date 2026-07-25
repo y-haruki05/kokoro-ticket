@@ -26,30 +26,7 @@ struct TicketListCardView: View {
 
             Spacer(minLength: 4)
 
-            Text(ticket.status.rawValue)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    ticket.status == .unused
-                        ? AppColors.primaryDark
-                        : AppColors.textSecondary
-                )
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    ticket.status == .unused
-                        ? AppColors.primarySoft
-                        : AppColors.background
-                )
-                .clipShape(Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(
-                            ticket.status == .unused
-                                ? AppColors.primary
-                                : AppColors.border,
-                            lineWidth: 1
-                        )
-                }
+            TicketStatusLabel(status: ticket.status)
         }
         .padding(16)
         .background(AppColors.cardBackground)

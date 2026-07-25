@@ -3,6 +3,7 @@ import SwiftUI
 struct TicketListView: View {
     let tickets: [TicketListItem]
     let onCreateTicket: () -> Void
+    var onDetailVisibilityChange: (Bool) -> Void = { _ in }
 
     @State private var selectedCategory: TicketListCategory = .received
 
@@ -24,7 +25,10 @@ struct TicketListView: View {
                 } else {
                     LazyVStack(spacing: 14) {
                         ForEach(filteredTickets) { ticket in
-                            TicketListCardView(ticket: ticket)
+                            NavigationLink(value: ticket) {
+                                TicketListCardView(ticket: ticket)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -36,6 +40,15 @@ struct TicketListView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
+        .navigationDestination(for: TicketListItem.self) { ticket in
+            TicketDetailView(ticket: ticket)
+                .onAppear {
+                    onDetailVisibilityChange(true)
+                }
+                .onDisappear {
+                    onDetailVisibilityChange(false)
+                }
+        }
     }
 
     private var filteredTickets: [TicketListItem] {
