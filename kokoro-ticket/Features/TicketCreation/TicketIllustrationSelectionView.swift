@@ -1,10 +1,9 @@
 import SwiftUI
 
 struct TicketIllustrationSelectionView: View {
+    @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void
-    var onNext: (TicketIllustration) -> Void = { _ in }
-
-    @State private var selectedIllustration: TicketIllustration?
+    var onNext: () -> Void = {}
 
     private let illustrations = MockTicketIllustrations.candidates
     private let columns = [
@@ -27,11 +26,11 @@ struct TicketIllustrationSelectionView: View {
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(illustrations) { illustration in
                             Button {
-                                selectedIllustration = illustration
+                                draft.selectedIllustration = illustration
                             } label: {
                                 IllustrationSelectionCard(
                                     illustration: illustration,
-                                    isSelected: selectedIllustration == illustration
+                                    isSelected: draft.selectedIllustration == illustration
                                 )
                             }
                             .buttonStyle(.plain)
@@ -51,17 +50,14 @@ struct TicketIllustrationSelectionView: View {
     }
 
     private var nextButton: some View {
-        Button {
-            guard let selectedIllustration else { return }
-            onNext(selectedIllustration)
-        } label: {
+        Button(action: onNext) {
             Text("次へ")
                 .font(.system(size: 17, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
                 .background(
-                    selectedIllustration == nil
+                    draft.selectedIllustration == nil
                         ? AppColors.textSecondary.opacity(0.35)
                         : AppColors.primary
                 )
@@ -69,7 +65,7 @@ struct TicketIllustrationSelectionView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
-        .disabled(selectedIllustration == nil)
+        .disabled(draft.selectedIllustration == nil)
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
@@ -79,6 +75,9 @@ struct TicketIllustrationSelectionView: View {
 
 #Preview {
     NavigationStack {
-        TicketIllustrationSelectionView(onBack: {})
+        TicketIllustrationSelectionView(
+            draft: TicketCreationDraft(),
+            onBack: {}
+        )
     }
 }

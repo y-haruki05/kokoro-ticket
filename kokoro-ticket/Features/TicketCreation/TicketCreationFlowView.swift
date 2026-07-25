@@ -1,19 +1,18 @@
 import SwiftUI
 
 struct TicketCreationFlowView: View {
+    var onSave: (TicketCreationDraftSnapshot) -> Void = { _ in }
     let onClose: () -> Void
 
     @State private var path: [TicketCreationRoute] = []
-    @State private var selectedIllustration: TicketIllustration?
-    @State private var ticketContent = TicketContent()
-    @State private var ticketDesign = TicketDesign()
+    @State private var draft = TicketCreationDraft()
 
     var body: some View {
         NavigationStack(path: $path) {
             TicketIllustrationSelectionView(
+                draft: draft,
                 onBack: onClose,
-                onNext: { illustration in
-                    selectedIllustration = illustration
+                onNext: {
                     path.append(.contentInput)
                 }
             )
@@ -21,26 +20,27 @@ struct TicketCreationFlowView: View {
                 switch route {
                 case .contentInput:
                     TicketContentInputView(
-                        initialContent: ticketContent,
+                        draft: draft,
                         onBack: navigateBack,
-                        onNext: { content in
-                            ticketContent = content
+                        onNext: {
                             path.append(.design)
                         }
                     )
                 case .design:
                     TicketDesignSelectionView(
-                        illustration: selectedIllustration,
-                        content: ticketContent,
-                        initialDesign: ticketDesign,
+                        draft: draft,
                         onBack: navigateBack,
-                        onNext: { design in
-                            ticketDesign = design
+                        onNext: {
                             path.append(.confirmation)
                         }
                     )
                 case .confirmation:
-                    TicketConfirmationPlaceholderView(onBack: navigateBack)
+                    TicketConfirmationView(
+                        draft: draft,
+                        onBack: navigateBack,
+                        onSave: onSave,
+                        onSaveCompleted: finishCreation
+                    )
                 }
             }
         }
@@ -50,36 +50,18 @@ struct TicketCreationFlowView: View {
         guard !path.isEmpty else { return }
         path.removeLast()
     }
+
+    private func finishCreation() {
+        draft.reset()
+        path.removeAll()
+        onClose()
+    }
 }
 
 private enum TicketCreationRoute: Hashable {
     case contentInput
     case design
     case confirmation
-}
-
-private struct TicketConfirmationPlaceholderView: View {
-    let onBack: () -> Void
-
-    var body: some View {
-        VStack(spacing: 28) {
-            TicketCreationHeaderView(onBack: onBack)
-
-            TicketCreationStepIndicatorView(activeStep: 4)
-
-            Spacer()
-
-            Text("確認画面は今後実装予定です")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .background(AppColors.background.ignoresSafeArea())
-        .navigationBarHidden(true)
-    }
 }
 
 #Preview {

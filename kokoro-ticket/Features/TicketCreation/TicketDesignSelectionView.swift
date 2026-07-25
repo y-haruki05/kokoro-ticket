@@ -1,35 +1,14 @@
 import SwiftUI
 
 struct TicketDesignSelectionView: View {
-    let illustration: TicketIllustration?
-    let content: TicketContent
+    @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void
-    let onNext: (TicketDesign) -> Void
-
-    @State private var selectedBackgroundColor: TicketBackgroundColor
-    @State private var selectedBorderStyle: TicketBorderStyle
+    var onNext: () -> Void = {}
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-
-    init(
-        illustration: TicketIllustration?,
-        content: TicketContent,
-        initialDesign: TicketDesign = TicketDesign(),
-        onBack: @escaping () -> Void,
-        onNext: @escaping (TicketDesign) -> Void = { _ in }
-    ) {
-        self.illustration = illustration
-        self.content = content
-        self.onBack = onBack
-        self.onNext = onNext
-        _selectedBackgroundColor = State(
-            initialValue: initialDesign.backgroundColor
-        )
-        _selectedBorderStyle = State(initialValue: initialDesign.borderStyle)
-    }
 
     var body: some View {
         ScrollView {
@@ -47,11 +26,11 @@ struct TicketDesignSelectionView: View {
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(TicketBackgroundColor.allCases) { option in
                                 Button {
-                                    selectedBackgroundColor = option
+                                    draft.selectedBackgroundColor = option
                                 } label: {
                                     TicketBackgroundColorOptionView(
                                         option: option,
-                                        isSelected: selectedBackgroundColor == option
+                                        isSelected: draft.selectedBackgroundColor == option
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -63,11 +42,11 @@ struct TicketDesignSelectionView: View {
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(TicketBorderStyle.allCases) { style in
                                 Button {
-                                    selectedBorderStyle = style
+                                    draft.selectedBorderStyle = style
                                 } label: {
                                     TicketBorderStyleOptionView(
                                         style: style,
-                                        isSelected: selectedBorderStyle == style
+                                        isSelected: draft.selectedBorderStyle == style
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -77,9 +56,9 @@ struct TicketDesignSelectionView: View {
 
                     optionSection(title: "プレビュー") {
                         TicketDesignPreviewView(
-                            illustration: illustration,
-                            content: content,
-                            design: currentDesign
+                            illustration: draft.selectedIllustration,
+                            content: draft.content,
+                            design: draft.design
                         )
                     }
                 }
@@ -93,18 +72,9 @@ struct TicketDesignSelectionView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TicketCreationNavigationButtons(
                 onBack: onBack,
-                onNext: {
-                    onNext(currentDesign)
-                }
+                onNext: onNext
             )
         }
-    }
-
-    private var currentDesign: TicketDesign {
-        TicketDesign(
-            backgroundColor: selectedBackgroundColor,
-            borderStyle: selectedBorderStyle
-        )
     }
 
     private func optionSection<Content: View>(
@@ -124,13 +94,7 @@ struct TicketDesignSelectionView: View {
 #Preview {
     NavigationStack {
         TicketDesignSelectionView(
-            illustration: TicketIllustration(id: "preview"),
-            content: TicketContent(
-                ticketTitle: "肩たたき券",
-                message: "いつもありがとう",
-                sender: "ゆうせい",
-                receiver: "おかあさん"
-            ),
+            draft: TicketCreationDraft.preview,
             onBack: {}
         )
     }
