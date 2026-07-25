@@ -34,7 +34,7 @@ struct MainTabView: View {
 
                 TicketCreationFlowView(
                     onSave: { ticket in
-                        ticketStore.add(savedTicket: ticket)
+                        _ = ticketStore.add(savedTicket: ticket)
                     },
                     onClose: {
                         selection = .home

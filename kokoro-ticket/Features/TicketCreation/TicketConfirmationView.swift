@@ -39,7 +39,7 @@ struct TicketConfirmationView: View {
         }
         .overlay {
             if isShowingSaveConfirmation {
-                Text("チケットを保存しました")
+                Text("作り置きチケットとして保存しました")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)

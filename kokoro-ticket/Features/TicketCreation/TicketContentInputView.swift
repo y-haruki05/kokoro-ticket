@@ -29,18 +29,6 @@ struct TicketContentInputView: View {
                             placeholder: "ありがとうの気持ちを書こう",
                             text: $draft.message
                         )
-
-                        TicketInputField(
-                            title: "差出人",
-                            placeholder: "ゆうせい",
-                            text: $draft.sender
-                        )
-
-                        TicketInputField(
-                            title: "宛先",
-                            placeholder: "おかあさん",
-                            text: $draft.receiver
-                        )
                     }
                 }
             }

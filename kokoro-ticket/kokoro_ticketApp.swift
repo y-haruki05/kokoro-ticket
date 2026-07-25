@@ -14,9 +14,16 @@ struct kokoro_ticketApp: App {
 
     init() {
         do {
-            modelContainer = try ModelContainer(for: Ticket.self)
+            modelContainer = try SwiftDataContainerFactory.makeContainer()
         } catch {
-            fatalError("SwiftDataの初期化に失敗しました: \(error)")
+            SwiftDataContainerFactory.logFatalInitializationError(error)
+            fatalError(
+                """
+                SwiftDataの初期化に失敗しました。
+                詳細はSwiftDataカテゴリのログを確認してください。
+                \(String(reflecting: error))
+                """
+            )
         }
     }
 

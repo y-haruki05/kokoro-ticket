@@ -61,9 +61,9 @@ struct MemoriesView: View {
 
     private var usedTickets: [TicketListItem] {
         store.tickets
-            .filter(\.isUsed)
+            .filter { $0.status == .completed }
             .sorted {
-                ($0.usedAt ?? .distantPast) > ($1.usedAt ?? .distantPast)
+                ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast)
             }
     }
 }

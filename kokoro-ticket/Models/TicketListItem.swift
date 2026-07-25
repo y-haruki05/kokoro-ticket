@@ -1,16 +1,25 @@
 import Foundation
 
-enum TicketListCategory: String, CaseIterable, Identifiable, Hashable {
-    case received = "もらった"
-    case sent = "あげた"
-    case used = "使った"
+enum TicketDetailAction: String, Identifiable, Hashable {
+    case edit
+    case delete
+    case send
+    case simulateReceive
+    case requestUsage
+    case complete
 
     var id: Self { self }
-}
 
-enum TicketUsageStatus: String, Hashable {
-    case unused = "未使用"
-    case used = "使用済み"
+    var title: String {
+        switch self {
+        case .edit: "編集"
+        case .delete: "削除"
+        case .send: "送信"
+        case .simulateReceive: "受け取りをシミュレート"
+        case .requestUsage: "このチケットを使う"
+        case .complete: "完了にする"
+        }
+    }
 }
 
 struct TicketListItem: Identifiable, Hashable {
@@ -19,13 +28,14 @@ struct TicketListItem: Identifiable, Hashable {
     let title: String
     let message: String
     let senderName: String
-    let receiverName: String
-    let counterpartName: String
-    let counterpartLabel: String
+    let receiverName: String?
     let createdAt: Date
-    var isUsed: Bool
-    var usedAt: Date?
-    let category: TicketListCategory
+    let updatedAt: Date
+    let sentAt: Date?
+    let receivedAt: Date?
+    let requestedAt: Date?
+    let completedAt: Date?
+    let status: TicketStatus
     let design: TicketDesign
 
     init(
@@ -34,13 +44,14 @@ struct TicketListItem: Identifiable, Hashable {
         title: String,
         message: String,
         senderName: String,
-        receiverName: String,
-        counterpartName: String,
-        counterpartLabel: String,
+        receiverName: String? = nil,
         createdAt: Date,
-        status: TicketUsageStatus,
-        usedAt: Date? = nil,
-        category: TicketListCategory,
+        updatedAt: Date? = nil,
+        sentAt: Date? = nil,
+        receivedAt: Date? = nil,
+        requestedAt: Date? = nil,
+        completedAt: Date? = nil,
+        status: TicketStatus,
         design: TicketDesign
     ) {
         self.id = id
@@ -49,47 +60,31 @@ struct TicketListItem: Identifiable, Hashable {
         self.message = message
         self.senderName = senderName
         self.receiverName = receiverName
-        self.counterpartName = counterpartName
-        self.counterpartLabel = counterpartLabel
         self.createdAt = createdAt
-        self.isUsed = status == .used
-        self.usedAt = usedAt
-        self.category = category
+        self.updatedAt = updatedAt ?? createdAt
+        self.sentAt = sentAt
+        self.receivedAt = receivedAt
+        self.requestedAt = requestedAt
+        self.completedAt = completedAt
+        self.status = status
         self.design = design
     }
 
-    init(savedTicket: TicketCreationDraftSnapshot, createdAt: Date = .now) {
-        self.init(
-            illustration: savedTicket.selectedIllustration,
-            title: savedTicket.content.ticketTitle,
-            message: savedTicket.content.message,
-            senderName: savedTicket.content.sender,
-            receiverName: savedTicket.content.receiver,
-            counterpartName: savedTicket.content.receiver,
-            counterpartLabel: "宛先",
-            createdAt: createdAt,
-            status: .unused,
-            category: .sent,
-            design: savedTicket.design
-        )
-    }
-
     init(ticket: Ticket) {
-        let category = TicketListCategory(rawValue: ticket.category) ?? .sent
-
         self.init(
             id: ticket.id,
             illustration: ticket.illustration.map(TicketIllustration.init(id:)),
             title: ticket.ticketTitle,
             message: ticket.message,
-            senderName: ticket.sender,
-            receiverName: ticket.receiver,
-            counterpartName: category == .received ? ticket.sender : ticket.receiver,
-            counterpartLabel: category == .received ? "差出人" : "宛先",
+            senderName: ticket.senderName,
+            receiverName: ticket.receiverName,
             createdAt: ticket.createdAt,
-            status: ticket.isUsed ? .used : .unused,
-            usedAt: ticket.usedAt,
-            category: category,
+            updatedAt: ticket.updatedAt,
+            sentAt: ticket.sentAt,
+            receivedAt: ticket.receivedAt,
+            requestedAt: ticket.requestedAt,
+            completedAt: ticket.completedAt,
+            status: ticket.status,
             design: TicketDesign(
                 backgroundColor: TicketBackgroundColor(rawValue: ticket.backgroundColor) ?? .white,
                 borderStyle: TicketBorderStyle(rawValue: ticket.borderStyle) ?? .simple
@@ -97,35 +92,46 @@ struct TicketListItem: Identifiable, Hashable {
         )
     }
 
-    var content: TicketContent {
-        TicketContent(
-            ticketTitle: title,
-            message: message,
-            sender: senderName,
-            receiver: receiverName
-        )
+    var counterpartName: String {
+        receiverName ?? "送り先未選択"
     }
 
-    var status: TicketUsageStatus {
-        isUsed ? .used : .unused
+    var counterpartLabel: String {
+        receiverName == nil ? "状態" : "相手"
+    }
+
+    var detailActions: [TicketDetailAction] {
+        switch status {
+        case .draft:
+            [.edit, .delete, .send]
+        case .sent:
+            [.simulateReceive]
+        case .received:
+            [.requestUsage]
+        case .requested:
+            [.complete]
+        case .completed:
+            []
+        }
     }
 }
 
 extension Ticket {
     convenience init(
         savedTicket: TicketCreationDraftSnapshot,
+        senderName: String,
         createdAt: Date = .now
     ) {
         self.init(
             ticketTitle: savedTicket.content.ticketTitle,
             message: savedTicket.content.message,
-            sender: savedTicket.content.sender,
-            receiver: savedTicket.content.receiver,
+            senderName: senderName,
             illustration: savedTicket.selectedIllustration?.id,
             backgroundColor: savedTicket.design.backgroundColor.rawValue,
             borderStyle: savedTicket.design.borderStyle.rawValue,
+            status: .draft,
             createdAt: createdAt,
-            category: TicketListCategory.sent.rawValue
+            updatedAt: createdAt
         )
     }
 
@@ -134,15 +140,18 @@ extension Ticket {
             id: item.id,
             ticketTitle: item.title,
             message: item.message,
-            sender: item.senderName,
-            receiver: item.receiverName,
+            senderName: item.senderName,
+            receiverName: item.receiverName,
             illustration: item.illustration?.id,
             backgroundColor: item.design.backgroundColor.rawValue,
             borderStyle: item.design.borderStyle.rawValue,
-            isUsed: item.isUsed,
+            status: item.status,
             createdAt: item.createdAt,
-            usedAt: item.usedAt,
-            category: item.category.rawValue
+            updatedAt: item.updatedAt,
+            sentAt: item.sentAt,
+            receivedAt: item.receivedAt,
+            requestedAt: item.requestedAt,
+            completedAt: item.completedAt
         )
     }
 }

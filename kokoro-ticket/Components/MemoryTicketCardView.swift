@@ -21,11 +21,11 @@ struct MemoryTicketCardView: View {
 
                 HStack(spacing: 12) {
                     personLabel(title: "差出人", value: ticket.senderName)
-                    personLabel(title: "宛先", value: ticket.receiverName)
+                    personLabel(title: "宛先", value: ticket.receiverName ?? "未設定")
                 }
 
-                if let usedAt = ticket.usedAt {
-                    Text("使用日：\(usedAt.formatted(date: .numeric, time: .omitted))")
+                if let completedAt = ticket.completedAt {
+                    Text("完了日：\(completedAt.formatted(date: .numeric, time: .omitted))")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(AppColors.textSecondary.opacity(0.85))
                 }
@@ -62,7 +62,7 @@ private extension String {
 
 #Preview {
     MemoryTicketCardView(
-        ticket: MockTicketListItems.items.first { $0.isUsed }
+        ticket: MockTicketListItems.items.first { $0.status == .completed }
             ?? MockTicketListItems.items[0]
     )
     .padding()

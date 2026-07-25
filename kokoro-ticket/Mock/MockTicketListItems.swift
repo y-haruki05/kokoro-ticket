@@ -2,88 +2,81 @@ import Foundation
 
 enum MockTicketListItems {
     static let items = [
-        TicketListItem(
-            illustration: TicketIllustration(id: "received-01"),
-            title: "おつかれさま券",
-            message: "いつもありがとう！",
-            senderName: "ママ",
-            receiverName: "ゆうせい",
-            counterpartName: "ママ",
-            counterpartLabel: "差出人",
-            createdAt: daysAgo(0),
-            status: .unused,
-            category: .received,
-            design: TicketDesign(backgroundColor: .lightBlue, borderStyle: .simple)
-        ),
-        TicketListItem(
-            illustration: TicketIllustration(id: "received-02"),
-            title: "肩たたき券",
-            message: "ゆっくり休んでね",
-            senderName: "おとうさん",
-            receiverName: "ゆうせい",
-            counterpartName: "おとうさん",
-            counterpartLabel: "差出人",
-            createdAt: daysAgo(2),
-            status: .unused,
-            category: .received,
-            design: TicketDesign(backgroundColor: .white, borderStyle: .dashed)
-        ),
-        TicketListItem(
-            illustration: TicketIllustration(id: "received-03"),
-            title: "ぎゅー券",
-            message: "だいすきの気持ちをこめて",
-            senderName: "いもうと",
-            receiverName: "ゆうせい",
-            counterpartName: "いもうと",
-            counterpartLabel: "差出人",
-            createdAt: daysAgo(5),
-            status: .unused,
-            category: .received,
-            design: TicketDesign(backgroundColor: .lightPink, borderStyle: .roundedBold)
-        ),
-        TicketListItem(
-            illustration: TicketIllustration(id: "sent-01"),
+        makeTicket(
+            id: "00000000-0000-0000-0000-000000000001",
             title: "おてつだい券",
             message: "今日はぼくにまかせてね",
-            senderName: "ゆうせい",
-            receiverName: "おかあさん",
-            counterpartName: "おかあさん",
-            counterpartLabel: "宛先",
-            createdAt: daysAgo(1),
-            status: .unused,
-            category: .sent,
-            design: TicketDesign(backgroundColor: .lightYellow, borderStyle: .double)
+            receiverName: nil,
+            status: .draft,
+            daysAgo: 0
         ),
-        TicketListItem(
-            illustration: TicketIllustration(id: "sent-02"),
+        makeTicket(
+            id: "00000000-0000-0000-0000-000000000002",
             title: "だいすき券",
             message: "いつもありがとう",
-            senderName: "ゆうせい",
-            receiverName: "おとうさん",
-            counterpartName: "おとうさん",
-            counterpartLabel: "宛先",
-            createdAt: daysAgo(7),
-            status: .unused,
-            category: .sent,
-            design: TicketDesign(backgroundColor: .lightBlue, borderStyle: .dashed)
+            receiverName: "おかあさん",
+            status: .sent,
+            daysAgo: 1
         ),
-        TicketListItem(
-            illustration: TicketIllustration(id: "used-01"),
-            title: "だいすき券",
-            message: "いっしょに遊ぼう",
-            senderName: "ママ",
-            receiverName: "ゆうせい",
-            counterpartName: "ママ",
-            counterpartLabel: "差出人",
-            createdAt: daysAgo(10),
-            status: .used,
-            usedAt: daysAgo(1),
-            category: .received,
-            design: TicketDesign(backgroundColor: .lightPink, borderStyle: .simple)
+        makeTicket(
+            id: "00000000-0000-0000-0000-000000000003",
+            title: "肩たたき券",
+            message: "ゆっくり休んでね",
+            receiverName: "おとうさん",
+            status: .received,
+            daysAgo: 2
+        ),
+        makeTicket(
+            id: "00000000-0000-0000-0000-000000000004",
+            title: "ぎゅー券",
+            message: "だいすきの気持ちをこめて",
+            receiverName: "おかあさん",
+            status: .requested,
+            daysAgo: 4
+        ),
+        makeTicket(
+            id: "00000000-0000-0000-0000-000000000005",
+            title: "おつかれさま券",
+            message: "いつもありがとう！",
+            receiverName: "おかあさん",
+            status: .completed,
+            daysAgo: 8
         )
     ]
 
-    private static func daysAgo(_ days: Int) -> Date {
-        Calendar.current.date(byAdding: .day, value: -days, to: .now) ?? .now
+    private static func makeTicket(
+        id: String,
+        title: String,
+        message: String,
+        receiverName: String?,
+        status: TicketStatus,
+        daysAgo: Int
+    ) -> TicketListItem {
+        let createdAt = date(daysAgo: daysAgo)
+        let transitionAt = date(daysAgo: max(daysAgo - 1, 0))
+
+        return TicketListItem(
+            id: UUID(uuidString: id) ?? UUID(),
+            illustration: TicketIllustration(id: id),
+            title: title,
+            message: message,
+            senderName: "ゆうせい",
+            receiverName: receiverName,
+            createdAt: createdAt,
+            updatedAt: transitionAt,
+            sentAt: status == .draft ? nil : transitionAt,
+            receivedAt: [.received, .requested, .completed].contains(status) ? transitionAt : nil,
+            requestedAt: [.requested, .completed].contains(status) ? transitionAt : nil,
+            completedAt: status == .completed ? transitionAt : nil,
+            status: status,
+            design: TicketDesign(
+                backgroundColor: .lightBlue,
+                borderStyle: .roundedBold
+            )
+        )
+    }
+
+    private static func date(daysAgo: Int) -> Date {
+        Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now
     }
 }

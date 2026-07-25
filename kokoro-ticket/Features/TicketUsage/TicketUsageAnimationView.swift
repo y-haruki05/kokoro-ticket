@@ -14,7 +14,7 @@ struct TicketUsageAnimationView: View {
     @State private var stretchX: CGFloat = 1
     @State private var stretchY: CGFloat = 1
     @State private var ticketOpacity = 1.0
-    @State private var showsUsedMessage = false
+    @State private var showsCompletionMessage = false
     @State private var showsThanks = false
 
     var body: some View {
@@ -38,8 +38,8 @@ struct TicketUsageAnimationView: View {
                 .padding(.horizontal, 24)
 
                 VStack(spacing: 9) {
-                    if showsUsedMessage {
-                        Text("チケットを使いました！")
+                    if showsCompletionMessage {
+                        Text("チケットが完了しました！")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColors.primaryDark)
                             .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -131,7 +131,7 @@ struct TicketUsageAnimationView: View {
         await wait(360)
 
         withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
-            showsUsedMessage = true
+            showsCompletionMessage = true
         }
 
         await wait(220)
@@ -150,7 +150,7 @@ struct TicketUsageAnimationView: View {
 
         withAnimation(.easeInOut(duration: 0.25)) {
             ticketOpacity = 0.45
-            showsUsedMessage = true
+            showsCompletionMessage = true
             showsThanks = true
         }
 

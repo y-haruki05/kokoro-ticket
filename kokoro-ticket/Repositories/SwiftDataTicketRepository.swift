@@ -11,7 +11,7 @@ final class SwiftDataTicketRepository: TicketRepository {
 
     func fetchAll() throws -> [Ticket] {
         let descriptor = FetchDescriptor<Ticket>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)
     }
@@ -21,7 +21,61 @@ final class SwiftDataTicketRepository: TicketRepository {
         try modelContext.save()
     }
 
-    func markAsUsed(id: UUID, at usedAt: Date) throws -> Bool {
+    func updateDraft(
+        id: UUID,
+        title: String,
+        message: String,
+        at updatedAt: Date
+    ) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        ticket.ticketTitle = title
+        ticket.message = message
+        ticket.updatedAt = updatedAt
+        try modelContext.save()
+    }
+
+    func deleteDraft(id: UUID) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        modelContext.delete(ticket)
+        try modelContext.save()
+    }
+
+    func send(id: UUID, to friend: Friend, at sentAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .draft)
+        ticket.receiverName = friend.displayName
+        ticket.sentAt = sentAt
+        transition(ticket, to: .sent, at: sentAt)
+        try modelContext.save()
+    }
+
+    func receive(id: UUID, at receivedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .sent)
+        ticket.receivedAt = receivedAt
+        transition(ticket, to: .received, at: receivedAt)
+        try modelContext.save()
+    }
+
+    func requestUsage(id: UUID, at requestedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .received)
+        ticket.requestedAt = requestedAt
+        transition(ticket, to: .requested, at: requestedAt)
+        try modelContext.save()
+    }
+
+    func complete(id: UUID, at completedAt: Date) throws {
+        let ticket = try fetchTicket(id: id)
+        try require(ticket, status: .requested)
+        ticket.completedAt = completedAt
+        transition(ticket, to: .completed, at: completedAt)
+        try modelContext.save()
+    }
+
+    private func fetchTicket(id: UUID) throws -> Ticket {
         let ticketID = id
         let descriptor = FetchDescriptor<Ticket>(
             predicate: #Predicate { ticket in
@@ -29,16 +83,27 @@ final class SwiftDataTicketRepository: TicketRepository {
             }
         )
 
-        guard
-            let ticket = try modelContext.fetch(descriptor).first,
-            !ticket.isUsed
-        else {
-            return false
+        guard let ticket = try modelContext.fetch(descriptor).first else {
+            throw TicketRepositoryError.ticketNotFound
         }
+        return ticket
+    }
 
-        ticket.isUsed = true
-        ticket.usedAt = usedAt
-        try modelContext.save()
-        return true
+    private func require(_ ticket: Ticket, status: TicketStatus) throws {
+        guard ticket.status == status else {
+            throw TicketRepositoryError.invalidTransition(
+                expected: status,
+                actual: ticket.status
+            )
+        }
+    }
+
+    private func transition(
+        _ ticket: Ticket,
+        to status: TicketStatus,
+        at date: Date
+    ) {
+        ticket.status = status
+        ticket.updatedAt = date
     }
 }
