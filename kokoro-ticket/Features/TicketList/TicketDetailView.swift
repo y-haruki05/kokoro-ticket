@@ -6,7 +6,7 @@ struct TicketDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingUseConfirmation = false
-    @State private var isShowingUseCompletion = false
+    @State private var isShowingUsageAnimation = false
 
     var body: some View {
         Group {
@@ -38,21 +38,15 @@ struct TicketDetailView: View {
             titleVisibility: .visible
         ) {
             Button("使用する") {
-                useTicket()
+                startUsageAnimation()
             }
             Button("キャンセル", role: .cancel) {}
         }
-        .overlay {
-            if isShowingUseCompletion {
-                Text("チケットを使用しました")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 15)
-                    .background(AppColors.textSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: AppColors.shadow, radius: 10, y: 5)
-                    .transition(.opacity)
+        .fullScreenCover(isPresented: $isShowingUsageAnimation) {
+            if let ticket = store.ticket(id: ticketID) {
+                TicketUsageAnimationView(ticket: ticket) {
+                    finishUsage()
+                }
             }
         }
     }
@@ -105,19 +99,20 @@ struct TicketDetailView: View {
         .padding(.top, 12)
     }
 
-    private func useTicket() {
-        guard store.markAsUsed(id: ticketID) else { return }
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isShowingUseCompletion = true
+    private func startUsageAnimation() {
+        guard
+            !isShowingUsageAnimation,
+            store.ticket(id: ticketID)?.isUsed == false
+        else {
+            return
         }
 
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isShowingUseCompletion = false
-            }
-        }
+        isShowingUsageAnimation = true
+    }
+
+    private func finishUsage() {
+        _ = store.markAsUsed(id: ticketID)
+        isShowingUsageAnimation = false
     }
 }
 
