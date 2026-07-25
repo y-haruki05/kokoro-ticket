@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var savedTickets: [TicketListItem] = []
+    @State private var isShowingTicketDetail = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -17,6 +18,9 @@ struct MainTabView: View {
                         tickets: MockTicketListItems.items + savedTickets,
                         onCreateTicket: {
                             selection = .create
+                        },
+                        onDetailVisibilityChange: { isShowing in
+                            isShowingTicketDetail = isShowing
                         }
                     )
                 }
@@ -40,7 +44,7 @@ struct MainTabView: View {
             }
             .toolbar(.hidden, for: .tabBar)
 
-            if selection != .create {
+            if selection != .create && !isShowingTicketDetail {
                 AppTabBar(selection: $selection)
             }
         }
