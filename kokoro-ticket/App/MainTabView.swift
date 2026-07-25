@@ -38,7 +38,17 @@ struct MainTabView: View {
                 )
                     .tag(AppTab.create)
 
-                placeholderScreen(title: "思い出")
+                NavigationStack {
+                    MemoriesView(
+                        store: ticketStore,
+                        onCreateTicket: {
+                            selection = .create
+                        },
+                        onDetailVisibilityChange: { isShowing in
+                            isShowingTicketDetail = isShowing
+                        }
+                    )
+                }
                     .tag(AppTab.memories)
 
                 placeholderScreen(title: "マイページ")
