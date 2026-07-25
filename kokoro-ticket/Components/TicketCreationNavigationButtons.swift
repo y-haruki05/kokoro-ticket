@@ -7,24 +7,26 @@ struct TicketCreationNavigationButtons: View {
     var body: some View {
         HStack(spacing: 14) {
             Button(action: onBack) {
-                buttonLabel("戻る")
-            }
-            .foregroundStyle(AppColors.primaryDark)
-            .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(AppColors.border, lineWidth: 1.5)
+                buttonLabel(
+                    "戻る",
+                    foregroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.cardBackground
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(AppColors.border, lineWidth: 1.5)
+                }
             }
             .buttonStyle(.plain)
 
             Button(action: onNext) {
-                buttonLabel("次へ")
+                buttonLabel(
+                    "次へ",
+                    foregroundColor: .white,
+                    backgroundColor: AppColors.primary
+                )
+                .shadow(color: AppColors.shadow, radius: 8, y: 4)
             }
-            .foregroundStyle(.white)
-            .background(AppColors.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: AppColors.shadow, radius: 8, y: 4)
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
@@ -33,12 +35,19 @@ struct TicketCreationNavigationButtons: View {
         .background(.ultraThinMaterial)
     }
 
-    private func buttonLabel(_ title: String) -> some View {
+    private func buttonLabel(
+        _ title: String,
+        foregroundColor: Color,
+        backgroundColor: Color
+    ) -> some View {
         Text(title)
             .font(.system(size: 17, weight: .bold, design: .rounded))
+            .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .contentShape(Rectangle())
+            .background(backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
     }
 }
 
