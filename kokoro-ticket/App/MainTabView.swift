@@ -14,13 +14,11 @@ struct MainTabView: View {
                 placeholderScreen(title: "チケット")
                     .tag(AppTab.tickets)
 
-                NavigationStack {
-                    TicketIllustrationSelectionView(
-                        onBack: {
-                            selection = .home
-                        }
-                    )
-                }
+                TicketCreationFlowView(
+                    onClose: {
+                        selection = .home
+                    }
+                )
                     .tag(AppTab.create)
 
                 placeholderScreen(title: "思い出")
