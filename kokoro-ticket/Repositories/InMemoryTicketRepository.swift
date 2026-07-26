@@ -3,9 +3,23 @@ import Foundation
 @MainActor
 final class InMemoryTicketRepository: TicketRepository {
     private var tickets: [Ticket]
+    private let currentUserID: UUID
+    private let currentUserName: String
+    private var transfers: [TicketTransfer]
+    var sendError: AppError?
 
-    init(tickets: [Ticket] = []) {
+    init(
+        tickets: [Ticket] = [],
+        currentUserID: UUID = UUID(),
+        currentUserName: String = "ゆうせい",
+        transfers: [TicketTransfer] = [],
+        sendError: AppError? = nil
+    ) {
         self.tickets = tickets
+        self.currentUserID = currentUserID
+        self.currentUserName = currentUserName
+        self.transfers = transfers
+        self.sendError = sendError
     }
 
     func fetchAll() throws -> [Ticket] {
@@ -62,6 +76,39 @@ final class InMemoryTicketRepository: TicketRepository {
         try require(ticket, status: .requested)
         ticket.completedAt = completedAt
         transition(ticket, to: .completed, at: completedAt)
+    }
+
+    func sendTicket(
+        _ item: TicketListItem,
+        to friend: Friend,
+        at sentAt: Date
+    ) async throws -> TicketTransfer {
+        if let sendError { throw sendError }
+        try send(id: item.id, to: friend, at: sentAt)
+        let transfer = TicketTransfer(
+            id: UUID(),
+            ticketID: item.id,
+            senderID: currentUserID,
+            receiverID: friend.id,
+            senderNameSnapshot: currentUserName,
+            receiverNameSnapshot: friend.displayName,
+            sentAt: sentAt,
+            receivedAt: sentAt
+        )
+        transfers.append(transfer)
+        return transfer
+    }
+
+    func getSentTickets() async throws -> [TicketListItem] {
+        tickets
+            .filter { $0.status == .sent }
+            .map(TicketListItem.init(ticket:))
+    }
+
+    func getReceivedTickets() async throws -> [TicketListItem] {
+        tickets
+            .filter { $0.status == .received }
+            .map(TicketListItem.init(ticket:))
     }
 
     private func fetchTicket(id: UUID) throws -> Ticket {

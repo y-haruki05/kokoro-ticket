@@ -41,6 +41,7 @@ struct MainTabView: View {
                 NavigationStack {
                     TicketListView(
                         store: ticketStore,
+                        friendStore: friendStore,
                         onCreateTicket: {
                             selection = .create
                         },
@@ -91,6 +92,9 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
+        .task {
+            await ticketStore.reloadRemoteTickets()
+        }
     }
 
 }

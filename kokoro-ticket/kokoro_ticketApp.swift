@@ -42,8 +42,11 @@ struct kokoro_ticketApp: App {
                 friendRepository: SupabaseFriendRepository(
                     clientProvider: supabaseClientProvider
                 ),
-                ticketRepository: SwiftDataTicketRepository(
-                    modelContext: modelContainer.mainContext
+                ticketRepository: SupabaseTicketRepository(
+                    localRepository: SwiftDataTicketRepository(
+                        modelContext: modelContainer.mainContext
+                    ),
+                    clientProvider: supabaseClientProvider
                 )
             )
         }

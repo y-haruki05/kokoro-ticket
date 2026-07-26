@@ -29,6 +29,13 @@ enum AppError: Error, LocalizedError, Equatable {
     case friendRequestAlreadyProcessed
     case friendPermissionDenied
     case friend(description: String)
+    case ticketNotDraft
+    case ticketNotOwned
+    case ticketReceiverNotFriend
+    case ticketSendToSelf
+    case ticketAlreadySent
+    case ticketPermissionDenied
+    case ticketTransfer(description: String)
     case network(description: String)
     case repository(description: String)
 
@@ -89,6 +96,20 @@ enum AppError: Error, LocalizedError, Equatable {
         case .friendPermissionDenied:
             "この操作を行う権限がありません"
         case let .friend(description):
+            description
+        case .ticketNotDraft:
+            "作り置き状態のチケットだけ送信できます"
+        case .ticketNotOwned:
+            "自分のチケットだけ送信できます"
+        case .ticketReceiverNotFriend:
+            "フレンド以外にはチケットを送信できません"
+        case .ticketSendToSelf:
+            "自分自身へチケットは送信できません"
+        case .ticketAlreadySent:
+            "このチケットはすでに送信されています"
+        case .ticketPermissionDenied:
+            "このチケットを操作する権限がありません"
+        case let .ticketTransfer(description):
             description
         case .network:
             "ネットワーク接続を確認してください"

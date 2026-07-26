@@ -3,6 +3,8 @@ import SwiftUI
 struct TicketDetailView: View {
     let ticketID: TicketListItem.ID
     let store: TicketStore
+    var friendStore: FriendStore? = nil
+    var onTicketSent: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @State private var pendingAction: TicketDetailAction?
@@ -30,13 +32,18 @@ struct TicketDetailView: View {
                     actionArea(for: ticket)
                 }
                 .sheet(isPresented: $isShowingFriendSelection) {
-                    TicketFriendSelectionView(
-                        ticket: ticket,
-                        friends: MockFriends.items,
-                        onSend: { friend in
-                            store.send(id: ticketID, to: friend)
-                        }
-                    )
+                    if let friendStore {
+                        TicketFriendSelectionView(
+                            ticket: ticket,
+                            friendStore: friendStore,
+                            ticketStore: store,
+                            onSent: {
+                                isShowingFriendSelection = false
+                                onTicketSent()
+                                dismiss()
+                            }
+                        )
+                    }
                 }
                 .sheet(isPresented: $isShowingEditor) {
                     TicketDraftEditView(
@@ -258,7 +265,13 @@ struct TicketDetailView: View {
     NavigationStack {
         TicketDetailView(
             ticketID: MockTicketListItems.items[0].id,
-            store: TicketStore(tickets: MockTicketListItems.items)
+            store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(
+                repository: InMemoryFriendRepository(
+                    friends: [FriendPreviewData.friend]
+                ),
+                friends: [FriendPreviewData.friend]
+            )
         )
     }
 }

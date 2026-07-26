@@ -75,6 +75,22 @@ final class SwiftDataTicketRepository: TicketRepository {
         try modelContext.save()
     }
 
+    func sendTicket(
+        _ ticket: TicketListItem,
+        to friend: Friend,
+        at sentAt: Date
+    ) async throws -> TicketTransfer {
+        throw TicketRepositoryError.remoteUnavailable
+    }
+
+    func getSentTickets() async throws -> [TicketListItem] {
+        []
+    }
+
+    func getReceivedTickets() async throws -> [TicketListItem] {
+        []
+    }
+
     private func fetchTicket(id: UUID) throws -> Ticket {
         let ticketID = id
         let descriptor = FetchDescriptor<Ticket>(
