@@ -19,6 +19,26 @@ struct AppConfiguration: Sendable {
         )
 
         guard
+            !projectURLString.localizedCaseInsensitiveContains("placeholder"),
+            !projectURLString.contains("YOUR_PROJECT_REF")
+        else {
+            throw AppError.invalidConfiguration(
+                key: "SUPABASE_URL",
+                reason: "Secrets.local.xcconfigに実際のProject URLを設定してください"
+            )
+        }
+
+        guard
+            !anonKey.localizedCaseInsensitiveContains("placeholder"),
+            !anonKey.contains("YOUR_SUPABASE_ANON_KEY")
+        else {
+            throw AppError.invalidConfiguration(
+                key: "SUPABASE_ANON_KEY",
+                reason: "Secrets.local.xcconfigに実際のAnon Keyを設定してください"
+            )
+        }
+
+        guard
             let projectURL = URL(string: projectURLString),
             projectURL.scheme == "https",
             projectURL.host != nil
