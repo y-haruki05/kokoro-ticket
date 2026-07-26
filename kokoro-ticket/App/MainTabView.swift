@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var ticketStore: TicketStore
+    @State private var friendStore: FriendStore
     @State private var isShowingTicketDetail = false
     private let profileStore: ProfileStore
     private let currentUserEmail: String?
@@ -11,6 +12,7 @@ struct MainTabView: View {
 
     init(
         repository: any TicketRepository,
+        friendRepository: any FriendRepository,
         profileStore: ProfileStore,
         currentUserEmail: String? = nil,
         isAuthLoading: Bool = false,
@@ -18,6 +20,9 @@ struct MainTabView: View {
     ) {
         _ticketStore = State(
             initialValue: TicketStore(repository: repository)
+        )
+        _friendStore = State(
+            initialValue: FriendStore(repository: friendRepository)
         )
         self.profileStore = profileStore
         self.currentUserEmail = currentUserEmail
@@ -71,6 +76,7 @@ struct MainTabView: View {
 
                 ProfileView(
                     store: profileStore,
+                    friendStore: friendStore,
                     email: currentUserEmail,
                     isAuthLoading: isAuthLoading,
                     clipboard: SystemClipboardService(),
@@ -180,6 +186,7 @@ private struct AppTabBar: View {
         repository: InMemoryTicketRepository(
             tickets: MockTicketListItems.items.map(Ticket.init(item:))
         ),
+        friendRepository: InMemoryFriendRepository(),
         profileStore: ProfileStore(
             repository: InMemoryProfileRepository(profile: profile),
             profile: profile,

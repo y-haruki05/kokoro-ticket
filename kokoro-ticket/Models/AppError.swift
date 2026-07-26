@@ -20,6 +20,15 @@ enum AppError: Error, LocalizedError, Equatable {
     case profile(description: String)
     case friendCodeGenerationFailed
     case friendCodeDuplicated
+    case invalidFriendCode
+    case friendNotFound
+    case friendRequestToSelf
+    case alreadyFriends
+    case friendRequestAlreadySent
+    case incomingFriendRequestExists
+    case friendRequestAlreadyProcessed
+    case friendPermissionDenied
+    case friend(description: String)
     case network(description: String)
     case repository(description: String)
 
@@ -63,6 +72,24 @@ enum AppError: Error, LocalizedError, Equatable {
             "フレンドコードを発行できませんでした。もう一度お試しください"
         case .friendCodeDuplicated:
             "フレンドコードが重複しました。もう一度お試しください"
+        case .invalidFriendCode:
+            "8文字の正しいフレンドコードを入力してください"
+        case .friendNotFound:
+            "フレンドコードに一致するユーザーが見つかりません"
+        case .friendRequestToSelf:
+            "自分自身へフレンド申請はできません"
+        case .alreadyFriends:
+            "すでにフレンドです"
+        case .friendRequestAlreadySent:
+            "このユーザーへは申請済みです"
+        case .incomingFriendRequestExists:
+            "相手からフレンド申請が届いています"
+        case .friendRequestAlreadyProcessed:
+            "この申請はすでに処理されています"
+        case .friendPermissionDenied:
+            "この操作を行う権限がありません"
+        case let .friend(description):
+            description
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):
