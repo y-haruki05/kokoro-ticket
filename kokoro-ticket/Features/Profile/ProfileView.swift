@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 struct ProfileView: View {
     let store: ProfileStore
+    let friendStore: FriendStore
     let email: String?
     let isAuthLoading: Bool
     let onLogout: () -> Void
@@ -14,12 +15,14 @@ struct ProfileView: View {
 
     init(
         store: ProfileStore,
+        friendStore: FriendStore,
         email: String?,
         isAuthLoading: Bool,
         clipboard: any ClipboardWriting,
         onLogout: @escaping () -> Void
     ) {
         self.store = store
+        self.friendStore = friendStore
         self.email = email
         self.isAuthLoading = isAuthLoading
         self.clipboard = clipboard
@@ -34,6 +37,37 @@ struct ProfileView: View {
                         ProfileAvatarPlaceholderView()
 
                         profileCard(profile)
+                        NavigationLink {
+                            FriendListView(
+                                store: friendStore,
+                                profile: profile,
+                                clipboard: clipboard
+                            )
+                        } label: {
+                            HStack(spacing: 14) {
+                                Image(systemName: "person.2.fill")
+                                    .foregroundStyle(AppColors.primary)
+                                    .frame(width: 42, height: 42)
+                                    .background(AppColors.primarySoft)
+                                    .clipShape(Circle())
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("フレンド")
+                                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                                        .foregroundStyle(AppColors.textPrimary)
+                                    Text("検索・申請・フレンド一覧")
+                                        .font(.system(size: 13, design: .rounded))
+                                        .foregroundStyle(AppColors.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(AppColors.textSecondary)
+                            }
+                            .padding(18)
+                            .background(AppColors.cardBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .contentShape(RoundedRectangle(cornerRadius: 18))
+                        }
+                        .buttonStyle(.plain)
                         accountCard
                         logoutButton
                     }
@@ -185,6 +219,7 @@ struct ProfileView: View {
             profile: profile,
             isLoading: false
         ),
+        friendStore: FriendStore(repository: InMemoryFriendRepository()),
         email: "preview@example.com",
         isAuthLoading: false,
         clipboard: PreviewClipboardService(),

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AuthenticationRootView: View {
     private let ticketRepository: any TicketRepository
+    private let friendRepository: any FriendRepository
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
@@ -10,9 +11,11 @@ struct AuthenticationRootView: View {
     init(
         authRepository: any AuthRepository,
         profileRepository: any ProfileRepository,
+        friendRepository: any FriendRepository,
         ticketRepository: any TicketRepository
     ) {
         self.ticketRepository = ticketRepository
+        self.friendRepository = friendRepository
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
         )
@@ -35,6 +38,7 @@ struct AuthenticationRootView: View {
             } else {
                 MainTabView(
                     repository: ticketRepository,
+                    friendRepository: friendRepository,
                     profileStore: profileStore,
                     currentUserEmail: sessionStore.currentUser?.email,
                     isAuthLoading: sessionStore.isLoading,
@@ -83,6 +87,7 @@ struct AuthenticationRootView: View {
     AuthenticationRootView(
         authRepository: InMemoryAuthRepository(),
         profileRepository: InMemoryProfileRepository(),
+        friendRepository: InMemoryFriendRepository(),
         ticketRepository: InMemoryTicketRepository()
     )
 }
@@ -109,6 +114,7 @@ struct AuthenticationRootView: View {
             currentUserID: userID,
             profile: profile
         ),
+        friendRepository: InMemoryFriendRepository(currentUserID: userID),
         ticketRepository: InMemoryTicketRepository()
     )
 }
@@ -124,6 +130,7 @@ struct AuthenticationRootView: View {
             )
         ),
         profileRepository: InMemoryProfileRepository(currentUserID: userID),
+        friendRepository: InMemoryFriendRepository(currentUserID: userID),
         ticketRepository: InMemoryTicketRepository()
     )
 }
