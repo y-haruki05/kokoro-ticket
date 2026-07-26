@@ -21,6 +21,7 @@ struct AuthenticationFormField: View {
                     TextField(placeholder, text: $text)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
+                        .autocorrectionDisabled(true)
                 } else {
                     TextField(placeholder, text: $text)
                 }
