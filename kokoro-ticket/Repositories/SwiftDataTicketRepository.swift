@@ -91,6 +91,22 @@ final class SwiftDataTicketRepository: TicketRepository {
         []
     }
 
+    func acknowledgeTicket(id: UUID) async throws {
+        throw TicketRepositoryError.remoteUnavailable
+    }
+
+    func requestTicketUsage(id: UUID) async throws -> TicketUsageRequest {
+        throw TicketRepositoryError.remoteUnavailable
+    }
+
+    func getRequestedTickets() async throws -> [TicketListItem] {
+        []
+    }
+
+    func getWaitingTickets() async throws -> [TicketListItem] {
+        []
+    }
+
     private func fetchTicket(id: UUID) throws -> Ticket {
         let ticketID = id
         let descriptor = FetchDescriptor<Ticket>(

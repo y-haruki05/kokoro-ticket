@@ -78,7 +78,7 @@ struct TicketListView: View {
             await store.reloadRemoteTickets()
         }
         .overlay(alignment: .bottom) {
-            if let message = store.sendMessage {
+            if let message = store.requestMessage ?? store.sendMessage {
                 Text(message)
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -91,6 +91,7 @@ struct TicketListView: View {
                     .task(id: message) {
                         try? await Task.sleep(for: .seconds(2))
                         store.clearSendMessage()
+                        store.clearRequestMessage()
                     }
             }
         }
@@ -103,6 +104,18 @@ struct TicketListView: View {
             presenting: store.sendError
         ) { _ in
             Button("OK") { store.clearSendError() }
+        } message: { error in
+            Text(error.localizedDescription)
+        }
+        .alert(
+            "チケットを更新できませんでした",
+            isPresented: Binding(
+                get: { store.requestError != nil },
+                set: { if !$0 { store.clearRequestError() } }
+            ),
+            presenting: store.requestError
+        ) { _ in
+            Button("OK") { store.clearRequestError() }
         } message: { error in
             Text(error.localizedDescription)
         }
@@ -138,6 +151,51 @@ struct TicketListView: View {
     NavigationStack {
         TicketListView(
             store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .received
+        )
+    }
+}
+
+#Preview("リクエスト中・対応待ち") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .requested
+        )
+    }
+}
+
+#Preview("リクエスト処理中") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                repository: InMemoryTicketRepository(
+                    tickets: MockTicketListItems.items.map(Ticket.init(item:))
+                ),
+                isRequesting: true
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .received
+        )
+    }
+}
+
+#Preview("リクエストエラー") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                repository: InMemoryTicketRepository(
+                    tickets: MockTicketListItems.items.map(Ticket.init(item:))
+                ),
+                requestError: .ticketTransfer(
+                    description: "使用リクエストを送信できませんでした"
+                )
+            ),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
             initialStatus: .received

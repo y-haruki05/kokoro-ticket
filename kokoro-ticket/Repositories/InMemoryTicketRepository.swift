@@ -6,6 +6,7 @@ final class InMemoryTicketRepository: TicketRepository {
     private let currentUserID: UUID
     private let currentUserName: String
     private var transfers: [TicketTransfer]
+    private var usageRequests: [TicketUsageRequest]
     var sendError: AppError?
 
     init(
@@ -13,12 +14,14 @@ final class InMemoryTicketRepository: TicketRepository {
         currentUserID: UUID = UUID(),
         currentUserName: String = "ゆうせい",
         transfers: [TicketTransfer] = [],
+        usageRequests: [TicketUsageRequest] = [],
         sendError: AppError? = nil
     ) {
         self.tickets = tickets
         self.currentUserID = currentUserID
         self.currentUserName = currentUserName
         self.transfers = transfers
+        self.usageRequests = usageRequests
         self.sendError = sendError
     }
 
@@ -101,14 +104,45 @@ final class InMemoryTicketRepository: TicketRepository {
 
     func getSentTickets() async throws -> [TicketListItem] {
         tickets
-            .filter { $0.status == .sent }
-            .map(TicketListItem.init(ticket:))
+            .filter { [.sent, .received, .requested].contains($0.status) }
+            .map { TicketListItem(ticket: $0).viewed(as: .sender) }
     }
 
     func getReceivedTickets() async throws -> [TicketListItem] {
         tickets
-            .filter { $0.status == .received }
-            .map(TicketListItem.init(ticket:))
+            .filter { [.sent, .received, .requested].contains($0.status) }
+            .map { TicketListItem(ticket: $0).viewed(as: .receiver) }
+    }
+
+    func acknowledgeTicket(id: UUID) async throws {
+        try receive(id: id, at: .now)
+    }
+
+    func requestTicketUsage(id: UUID) async throws -> TicketUsageRequest {
+        let requestedAt = Date.now
+        try requestUsage(id: id, at: requestedAt)
+        let request = TicketUsageRequest(
+            id: UUID(),
+            ticketID: id,
+            requesterID: currentUserID,
+            requestedAt: requestedAt,
+            completedBy: nil,
+            completedAt: nil
+        )
+        usageRequests.append(request)
+        return request
+    }
+
+    func getRequestedTickets() async throws -> [TicketListItem] {
+        tickets
+            .filter { $0.status == .requested }
+            .map { TicketListItem(ticket: $0).viewed(as: .receiver) }
+    }
+
+    func getWaitingTickets() async throws -> [TicketListItem] {
+        tickets
+            .filter { $0.status == .requested }
+            .map { TicketListItem(ticket: $0).viewed(as: .sender) }
     }
 
     private func fetchTicket(id: UUID) throws -> Ticket {

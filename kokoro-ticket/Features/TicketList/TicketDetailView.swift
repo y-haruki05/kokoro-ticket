@@ -114,8 +114,16 @@ struct TicketDetailView: View {
         Button {
             handle(action)
         } label: {
-            Text(action.title)
-                .font(.system(size: action == .simulateReceive ? 13 : 16, weight: .bold, design: .rounded))
+            ZStack {
+                Text(action.title)
+                    .opacity(store.isRequesting ? 0 : 1)
+                if store.isRequesting,
+                   action == .acknowledgeReceipt || action == .requestUsage {
+                    ProgressView()
+                        .tint(.white)
+                }
+            }
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(actionForeground(action))
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
@@ -128,7 +136,7 @@ struct TicketDetailView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
-        .disabled(isCompletingTicket)
+        .disabled(isCompletingTicket || store.isRequesting)
     }
 
     private func handle(_ action: TicketDetailAction) {
@@ -137,7 +145,7 @@ struct TicketDetailView: View {
             isShowingEditor = true
         case .send:
             isShowingFriendSelection = true
-        case .delete, .simulateReceive, .requestUsage, .complete:
+        case .delete, .acknowledgeReceipt, .requestUsage, .complete:
             pendingAction = action
         }
     }
@@ -149,16 +157,25 @@ struct TicketDetailView: View {
             completeTicket()
             return
         }
+        if action == .acknowledgeReceipt || action == .requestUsage {
+            pendingAction = nil
+            Task {
+                if action == .acknowledgeReceipt {
+                    _ = await store.acknowledgeTicket(id: ticketID)
+                } else {
+                    _ = await store.requestUsage(id: ticketID)
+                }
+            }
+            return
+        }
 
         let succeeded: Bool
 
         switch action {
         case .delete:
             succeeded = store.deleteDraft(id: ticketID)
-        case .simulateReceive:
-            succeeded = store.receive(id: ticketID)
-        case .requestUsage:
-            succeeded = store.requestUsage(id: ticketID)
+        case .acknowledgeReceipt, .requestUsage:
+            succeeded = false
         case .edit, .send, .complete:
             succeeded = false
         }
@@ -206,8 +223,8 @@ struct TicketDetailView: View {
     private var confirmationTitle: String {
         switch pendingAction {
         case .delete: "この作り置きチケットを削除しますか？"
-        case .simulateReceive: "相手が受け取った状態へ進めますか？"
-        case .requestUsage: "このチケットの使用をリクエストしますか？"
+        case .acknowledgeReceipt: "このチケットを受け取りますか？"
+        case .requestUsage: "このチケットを使いますか？"
         case .complete: "チケットを完了しますか？"
         case .edit, .send, .none: ""
         }
@@ -216,8 +233,8 @@ struct TicketDetailView: View {
     private var confirmationButtonTitle: String {
         switch pendingAction {
         case .delete: "削除する"
-        case .simulateReceive: "受け取り済みにする"
-        case .requestUsage: "リクエストする"
+        case .acknowledgeReceipt: "受け取る"
+        case .requestUsage: "使用リクエストを送る"
         case .complete: "完了する"
         case .edit, .send, .none: "実行する"
         }
@@ -226,15 +243,15 @@ struct TicketDetailView: View {
     private func actionForeground(_ action: TicketDetailAction) -> Color {
         switch action {
         case .delete: .red
-        case .edit, .simulateReceive: AppColors.primaryDark
-        case .send, .requestUsage, .complete: .white
+        case .edit: AppColors.primaryDark
+        case .send, .acknowledgeReceipt, .requestUsage, .complete: .white
         }
     }
 
     private func actionBackground(_ action: TicketDetailAction) -> Color {
         switch action {
-        case .edit, .delete, .simulateReceive: AppColors.cardBackground
-        case .send, .requestUsage, .complete: AppColors.primary
+        case .edit, .delete: AppColors.cardBackground
+        case .send, .acknowledgeReceipt, .requestUsage, .complete: AppColors.primary
         }
     }
 

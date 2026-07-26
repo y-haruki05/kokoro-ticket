@@ -7,9 +7,14 @@ final class TicketStore {
     private(set) var tickets: [TicketListItem] = []
     private(set) var sentTickets: [TicketListItem] = []
     private(set) var receivedTickets: [TicketListItem] = []
+    private(set) var requestedTickets: [TicketListItem] = []
+    private(set) var waitingTickets: [TicketListItem] = []
     private(set) var isSending = false
+    private(set) var isRequesting = false
     private(set) var sendError: AppError?
     private(set) var sendMessage: String?
+    private(set) var requestError: AppError?
+    private(set) var requestMessage: String?
     private(set) var lastErrorMessage: String?
 
     private var localTickets: [TicketListItem] = []
@@ -24,12 +29,16 @@ final class TicketStore {
         repository: any TicketRepository,
         localSenderName: String = "ゆうせい",
         isSending: Bool = false,
-        sendError: AppError? = nil
+        sendError: AppError? = nil,
+        isRequesting: Bool = false,
+        requestError: AppError? = nil
     ) {
         self.repository = repository
         self.localSenderName = localSenderName
         self.isSending = isSending
         self.sendError = sendError
+        self.isRequesting = isRequesting
+        self.requestError = requestError
         reload()
     }
 
@@ -48,6 +57,8 @@ final class TicketStore {
             source = sentTickets
         case .received:
             source = receivedTickets
+        case .requested:
+            source = requestedTickets + waitingTickets
         default:
             source = tickets.filter { $0.status == status }
         }
@@ -134,9 +145,45 @@ final class TicketStore {
     }
 
     @discardableResult
-    func requestUsage(id: UUID) -> Bool {
+    func requestUsageLocally(id: UUID) -> Bool {
         perform {
             try repository.requestUsage(id: id, at: .now)
+        }
+    }
+
+    @discardableResult
+    func acknowledgeTicket(id: UUID) async -> Bool {
+        guard !isRequesting else { return false }
+        isRequesting = true
+        requestError = nil
+        defer { isRequesting = false }
+
+        do {
+            try await repository.acknowledgeTicket(id: id)
+            await reloadRemoteTickets()
+            requestMessage = "受け取りました"
+            return true
+        } catch {
+            requestError = normalizedRequestError(error)
+            return false
+        }
+    }
+
+    @discardableResult
+    func requestUsage(id: UUID) async -> Bool {
+        guard !isRequesting else { return false }
+        isRequesting = true
+        requestError = nil
+        defer { isRequesting = false }
+
+        do {
+            _ = try await repository.requestTicketUsage(id: id)
+            await reloadRemoteTickets()
+            requestMessage = "使用リクエストを送りました"
+            return true
+        } catch {
+            requestError = normalizedRequestError(error)
+            return false
         }
     }
 
@@ -161,7 +208,10 @@ final class TicketStore {
         do {
             async let sent = repository.getSentTickets()
             async let received = repository.getReceivedTickets()
-            (sentTickets, receivedTickets) = try await (sent, received)
+            async let requested = repository.getRequestedTickets()
+            async let waiting = repository.getWaitingTickets()
+            (sentTickets, receivedTickets, requestedTickets, waitingTickets) =
+                try await (sent, received, requested, waiting)
             rebuildTickets()
         } catch {
             sendError = normalizedSendError(error)
@@ -176,11 +226,19 @@ final class TicketStore {
         sendMessage = nil
     }
 
+    func clearRequestError() {
+        requestError = nil
+    }
+
+    func clearRequestMessage() {
+        requestMessage = nil
+    }
+
     private func rebuildTickets() {
         var ticketsByID = Dictionary(
             uniqueKeysWithValues: localTickets.map { ($0.id, $0) }
         )
-        for ticket in sentTickets + receivedTickets {
+        for ticket in sentTickets + receivedTickets + requestedTickets + waitingTickets {
             ticketsByID[ticket.id] = ticket
         }
         tickets = Array(ticketsByID.values)
@@ -202,6 +260,14 @@ final class TicketStore {
             return .network(description: urlError.localizedDescription)
         }
         return .ticketTransfer(description: "チケットを送信できませんでした")
+    }
+
+    private func normalizedRequestError(_ error: Error) -> AppError {
+        if let appError = error as? AppError { return appError }
+        if let urlError = error as? URLError {
+            return .network(description: urlError.localizedDescription)
+        }
+        return .ticketTransfer(description: "チケットの状態を更新できませんでした")
     }
 
     @discardableResult

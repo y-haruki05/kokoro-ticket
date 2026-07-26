@@ -26,7 +26,10 @@ struct TicketListCardView: View {
 
             Spacer(minLength: 4)
 
-            TicketStatusLabel(status: ticket.status)
+            TicketStatusLabel(
+                status: ticket.status,
+                title: ticket.statusDisplayName
+            )
         }
         .padding(16)
         .background(AppColors.cardBackground)
