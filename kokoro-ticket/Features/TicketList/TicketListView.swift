@@ -5,6 +5,7 @@ struct TicketListView: View {
     let friendStore: FriendStore
     let onCreateTicket: () -> Void
     var onDetailVisibilityChange: (Bool) -> Void = { _ in }
+    var onTicketCompleted: () -> Void = {}
 
     @State private var selectedStatus: TicketStatus
 
@@ -13,12 +14,14 @@ struct TicketListView: View {
         friendStore: FriendStore,
         onCreateTicket: @escaping () -> Void,
         onDetailVisibilityChange: @escaping (Bool) -> Void = { _ in },
+        onTicketCompleted: @escaping () -> Void = {},
         initialStatus: TicketStatus = .draft
     ) {
         self.store = store
         self.friendStore = friendStore
         self.onCreateTicket = onCreateTicket
         self.onDetailVisibilityChange = onDetailVisibilityChange
+        self.onTicketCompleted = onTicketCompleted
         _selectedStatus = State(initialValue: initialStatus)
     }
 
@@ -61,7 +64,8 @@ struct TicketListView: View {
                 friendStore: friendStore,
                 onTicketSent: {
                     selectedStatus = .sent
-                }
+                },
+                onTicketCompleted: onTicketCompleted
             )
                 .onAppear {
                     onDetailVisibilityChange(true)
@@ -78,7 +82,9 @@ struct TicketListView: View {
             await store.reloadRemoteTickets()
         }
         .overlay(alignment: .bottom) {
-            if let message = store.requestMessage ?? store.sendMessage {
+            if let message = store.completionMessage
+                ?? store.requestMessage
+                ?? store.sendMessage {
                 Text(message)
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -92,6 +98,7 @@ struct TicketListView: View {
                         try? await Task.sleep(for: .seconds(2))
                         store.clearSendMessage()
                         store.clearRequestMessage()
+                        store.clearCompletionMessage()
                     }
             }
         }
@@ -104,6 +111,18 @@ struct TicketListView: View {
             presenting: store.sendError
         ) { _ in
             Button("OK") { store.clearSendError() }
+        } message: { error in
+            Text(error.localizedDescription)
+        }
+        .alert(
+            "チケットを完了できませんでした",
+            isPresented: Binding(
+                get: { store.completionError != nil },
+                set: { if !$0 { store.clearCompletionError() } }
+            ),
+            presenting: store.completionError
+        ) { _ in
+            Button("OK") { store.clearCompletionError() }
         } message: { error in
             Text(error.localizedDescription)
         }

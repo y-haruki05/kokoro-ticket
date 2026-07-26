@@ -9,12 +9,16 @@ final class TicketStore {
     private(set) var receivedTickets: [TicketListItem] = []
     private(set) var requestedTickets: [TicketListItem] = []
     private(set) var waitingTickets: [TicketListItem] = []
+    private(set) var completedTickets: [TicketListItem] = []
     private(set) var isSending = false
     private(set) var isRequesting = false
     private(set) var sendError: AppError?
     private(set) var sendMessage: String?
     private(set) var requestError: AppError?
     private(set) var requestMessage: String?
+    private(set) var isCompleting = false
+    private(set) var completionError: AppError?
+    private(set) var completionMessage: String?
     private(set) var lastErrorMessage: String?
 
     private var localTickets: [TicketListItem] = []
@@ -31,7 +35,9 @@ final class TicketStore {
         isSending: Bool = false,
         sendError: AppError? = nil,
         isRequesting: Bool = false,
-        requestError: AppError? = nil
+        requestError: AppError? = nil,
+        isCompleting: Bool = false,
+        completionError: AppError? = nil
     ) {
         self.repository = repository
         self.localSenderName = localSenderName
@@ -39,6 +45,8 @@ final class TicketStore {
         self.sendError = sendError
         self.isRequesting = isRequesting
         self.requestError = requestError
+        self.isCompleting = isCompleting
+        self.completionError = completionError
         reload()
     }
 
@@ -50,6 +58,36 @@ final class TicketStore {
         )
     }
 
+    convenience init(
+        previewTickets: [TicketListItem],
+        isCompleting: Bool = false,
+        completionError: AppError? = nil
+    ) {
+        let usageRequests = previewTickets.compactMap { ticket -> TicketUsageRequest? in
+            guard [.requested, .completed].contains(ticket.status) else {
+                return nil
+            }
+            return TicketUsageRequest(
+                id: UUID(),
+                ticketID: ticket.id,
+                requesterID: UUID(),
+                requestedAt: ticket.requestedAt ?? ticket.updatedAt,
+                completedBy: ticket.status == .completed ? UUID() : nil,
+                completedAt: ticket.completedAt
+            )
+        }
+        self.init(
+            repository: InMemoryTicketRepository(
+                tickets: previewTickets.map(Ticket.init(item:)),
+                usageRequests: usageRequests
+            ),
+            isCompleting: isCompleting,
+            completionError: completionError
+        )
+        localTickets = previewTickets
+        rebuildTickets()
+    }
+
     func tickets(for status: TicketStatus) -> [TicketListItem] {
         let source: [TicketListItem]
         switch status {
@@ -59,6 +97,8 @@ final class TicketStore {
             source = receivedTickets
         case .requested:
             source = requestedTickets + waitingTickets
+        case .completed:
+            source = completedTickets
         default:
             source = tickets.filter { $0.status == status }
         }
@@ -194,6 +234,32 @@ final class TicketStore {
         }
     }
 
+    @discardableResult
+    func completeTicket(id: UUID) async -> Bool {
+        guard
+            !isCompleting,
+            let ticket = ticket(id: id),
+            ticket.status == .requested,
+            ticket.perspective != .receiver
+        else {
+            return false
+        }
+
+        isCompleting = true
+        completionError = nil
+        defer { isCompleting = false }
+
+        do {
+            try await repository.completeTicket(id: id)
+            await reloadRemoteTickets()
+            completionMessage = "チケットを完了しました"
+            return true
+        } catch {
+            completionError = normalizedCompletionError(error)
+            return false
+        }
+    }
+
     func reload() {
         do {
             localTickets = try repository.fetchAll().map(TicketListItem.init(ticket:))
@@ -210,8 +276,9 @@ final class TicketStore {
             async let received = repository.getReceivedTickets()
             async let requested = repository.getRequestedTickets()
             async let waiting = repository.getWaitingTickets()
-            (sentTickets, receivedTickets, requestedTickets, waitingTickets) =
-                try await (sent, received, requested, waiting)
+            async let completed = repository.getCompletedTickets()
+            (sentTickets, receivedTickets, requestedTickets, waitingTickets, completedTickets) =
+                try await (sent, received, requested, waiting, completed)
             rebuildTickets()
         } catch {
             sendError = normalizedSendError(error)
@@ -234,11 +301,29 @@ final class TicketStore {
         requestMessage = nil
     }
 
+    func reloadCompletedTickets() async {
+        do {
+            completedTickets = try await repository.getCompletedTickets()
+            rebuildTickets()
+        } catch {
+            completionError = normalizedCompletionError(error)
+        }
+    }
+
+    func clearCompletionError() {
+        completionError = nil
+    }
+
+    func clearCompletionMessage() {
+        completionMessage = nil
+    }
+
     private func rebuildTickets() {
         var ticketsByID = Dictionary(
             uniqueKeysWithValues: localTickets.map { ($0.id, $0) }
         )
-        for ticket in sentTickets + receivedTickets + requestedTickets + waitingTickets {
+        for ticket in sentTickets + receivedTickets + requestedTickets
+            + waitingTickets + completedTickets {
             ticketsByID[ticket.id] = ticket
         }
         tickets = Array(ticketsByID.values)
@@ -268,6 +353,24 @@ final class TicketStore {
             return .network(description: urlError.localizedDescription)
         }
         return .ticketTransfer(description: "チケットの状態を更新できませんでした")
+    }
+
+    private func normalizedCompletionError(_ error: Error) -> AppError {
+        if let appError = error as? AppError { return appError }
+        if let repositoryError = error as? TicketRepositoryError {
+            switch repositoryError {
+            case .ticketNotFound:
+                return .ticketTransfer(description: "チケットが見つかりません")
+            case .invalidTransition:
+                return .ticketNotRequested
+            case .remoteUnavailable:
+                return .ticketCompletionFailed
+            }
+        }
+        if let urlError = error as? URLError {
+            return .network(description: urlError.localizedDescription)
+        }
+        return .ticketCompletionFailed
     }
 
     @discardableResult

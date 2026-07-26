@@ -29,6 +29,12 @@ struct MemoryTicketCardView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(AppColors.textSecondary.opacity(0.85))
                 }
+
+                HStack(spacing: 10) {
+                    dateLabel(title: "送信", date: ticket.sentAt)
+                    dateLabel(title: "受取", date: ticket.receivedAt)
+                    dateLabel(title: "依頼", date: ticket.requestedAt)
+                }
             }
 
             Spacer(minLength: 0)
@@ -51,6 +57,14 @@ struct MemoryTicketCardView: View {
             .foregroundStyle(AppColors.textSecondary)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
+    }
+
+    private func dateLabel(title: String, date: Date?) -> some View {
+        Text("\(title)：\(date?.formatted(date: .numeric, time: .omitted) ?? "—")")
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(AppColors.textSecondary.opacity(0.8))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 }
 

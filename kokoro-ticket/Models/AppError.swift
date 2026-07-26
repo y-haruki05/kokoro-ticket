@@ -42,6 +42,11 @@ enum AppError: Error, LocalizedError, Equatable {
     case ticketUsageAlreadyRequested
     case ticketAcknowledgementFailed
     case ticketUsageRequestFailed
+    case ticketSenderOnly
+    case ticketNotRequested
+    case ticketAlreadyCompleted
+    case ticketUsageRequestNotFound
+    case ticketCompletionFailed
     case network(description: String)
     case repository(description: String)
 
@@ -129,6 +134,16 @@ enum AppError: Error, LocalizedError, Equatable {
             "チケットを受け取れませんでした"
         case .ticketUsageRequestFailed:
             "使用リクエストを送信できませんでした"
+        case .ticketSenderOnly:
+            "チケットの送り主だけが完了できます"
+        case .ticketNotRequested:
+            "使用リクエスト中のチケットだけ完了できます"
+        case .ticketAlreadyCompleted:
+            "このチケットはすでに完了しています"
+        case .ticketUsageRequestNotFound:
+            "使用リクエストが見つかりません"
+        case .ticketCompletionFailed:
+            "チケットを完了できませんでした"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):

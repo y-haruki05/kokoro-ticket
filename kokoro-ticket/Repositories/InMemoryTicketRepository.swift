@@ -8,6 +8,7 @@ final class InMemoryTicketRepository: TicketRepository {
     private var transfers: [TicketTransfer]
     private var usageRequests: [TicketUsageRequest]
     var sendError: AppError?
+    var completionError: AppError?
 
     init(
         tickets: [Ticket] = [],
@@ -15,7 +16,8 @@ final class InMemoryTicketRepository: TicketRepository {
         currentUserName: String = "ゆうせい",
         transfers: [TicketTransfer] = [],
         usageRequests: [TicketUsageRequest] = [],
-        sendError: AppError? = nil
+        sendError: AppError? = nil,
+        completionError: AppError? = nil
     ) {
         self.tickets = tickets
         self.currentUserID = currentUserID
@@ -23,6 +25,7 @@ final class InMemoryTicketRepository: TicketRepository {
         self.transfers = transfers
         self.usageRequests = usageRequests
         self.sendError = sendError
+        self.completionError = completionError
     }
 
     func fetchAll() throws -> [Ticket] {
@@ -143,6 +146,31 @@ final class InMemoryTicketRepository: TicketRepository {
         tickets
             .filter { $0.status == .requested }
             .map { TicketListItem(ticket: $0).viewed(as: .sender) }
+    }
+
+    func completeTicket(id: UUID) async throws {
+        if let completionError { throw completionError }
+        guard let index = usageRequests.firstIndex(where: { $0.ticketID == id }) else {
+            throw AppError.ticketUsageRequestNotFound
+        }
+        let completedAt = Date.now
+        try complete(id: id, at: completedAt)
+        let request = usageRequests[index]
+        usageRequests[index] = TicketUsageRequest(
+            id: request.id,
+            ticketID: request.ticketID,
+            requesterID: request.requesterID,
+            requestedAt: request.requestedAt,
+            completedBy: currentUserID,
+            completedAt: completedAt
+        )
+    }
+
+    func getCompletedTickets() async throws -> [TicketListItem] {
+        tickets
+            .filter { $0.status == .completed }
+            .map { TicketListItem(ticket: $0).viewed(as: .sender) }
+            .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
     }
 
     private func fetchTicket(id: UUID) throws -> Ticket {
