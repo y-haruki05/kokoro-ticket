@@ -4,7 +4,7 @@ enum TicketDetailAction: String, Identifiable, Hashable {
     case edit
     case delete
     case send
-    case simulateReceive
+    case acknowledgeReceipt
     case requestUsage
     case complete
 
@@ -15,11 +15,17 @@ enum TicketDetailAction: String, Identifiable, Hashable {
         case .edit: "編集"
         case .delete: "削除"
         case .send: "送信"
-        case .simulateReceive: "受け取りをシミュレート"
+        case .acknowledgeReceipt: "受け取る"
         case .requestUsage: "このチケットを使う"
         case .complete: "完了にする"
         }
     }
+}
+
+enum TicketPerspective: String, Hashable, Sendable {
+    case local
+    case sender
+    case receiver
 }
 
 struct TicketListItem: Identifiable, Hashable {
@@ -36,6 +42,7 @@ struct TicketListItem: Identifiable, Hashable {
     let requestedAt: Date?
     let completedAt: Date?
     let status: TicketStatus
+    let perspective: TicketPerspective
     let design: TicketDesign
 
     init(
@@ -52,6 +59,7 @@ struct TicketListItem: Identifiable, Hashable {
         requestedAt: Date? = nil,
         completedAt: Date? = nil,
         status: TicketStatus,
+        perspective: TicketPerspective = .local,
         design: TicketDesign
     ) {
         self.id = id
@@ -67,6 +75,7 @@ struct TicketListItem: Identifiable, Hashable {
         self.requestedAt = requestedAt
         self.completedAt = completedAt
         self.status = status
+        self.perspective = perspective
         self.design = design
     }
 
@@ -101,18 +110,55 @@ struct TicketListItem: Identifiable, Hashable {
     }
 
     var detailActions: [TicketDetailAction] {
-        switch status {
-        case .draft:
+        switch (perspective, status) {
+        case (_, .draft):
             [.edit, .delete, .send]
-        case .sent:
-            [.simulateReceive]
-        case .received:
+        case (.receiver, .sent):
+            [.acknowledgeReceipt]
+        case (.receiver, .received):
             [.requestUsage]
-        case .requested:
+        case (.local, .sent):
+            [.acknowledgeReceipt]
+        case (.local, .received):
+            [.requestUsage]
+        case (.local, .requested):
             [.complete]
-        case .completed:
+        default:
             []
         }
+    }
+
+    var statusDisplayName: String {
+        switch (perspective, status) {
+        case (.sender, .requested):
+            "対応待ち"
+        case (.receiver, .requested):
+            "相手の対応待ち"
+        case (.receiver, .sent):
+            "受取確認待ち"
+        default:
+            status.statusLabel
+        }
+    }
+
+    func viewed(as perspective: TicketPerspective) -> TicketListItem {
+        TicketListItem(
+            id: id,
+            illustration: illustration,
+            title: title,
+            message: message,
+            senderName: senderName,
+            receiverName: receiverName,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            sentAt: sentAt,
+            receivedAt: receivedAt,
+            requestedAt: requestedAt,
+            completedAt: completedAt,
+            status: status,
+            perspective: perspective,
+            design: design
+        )
     }
 }
 

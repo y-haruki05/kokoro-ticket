@@ -28,4 +28,8 @@ protocol TicketRepository {
     ) async throws -> TicketTransfer
     func getSentTickets() async throws -> [TicketListItem]
     func getReceivedTickets() async throws -> [TicketListItem]
+    func acknowledgeTicket(id: UUID) async throws
+    func requestTicketUsage(id: UUID) async throws -> TicketUsageRequest
+    func getRequestedTickets() async throws -> [TicketListItem]
+    func getWaitingTickets() async throws -> [TicketListItem]
 }

@@ -87,11 +87,48 @@ final class SupabaseTicketRepository: TicketRepository {
     }
 
     func getSentTickets() async throws -> [TicketListItem] {
-        try await fetchRemoteTickets(function: "get_sent_tickets", perspective: .sent)
+        try await fetchRemoteTickets(function: "get_sent_tickets", perspective: .sender)
     }
 
     func getReceivedTickets() async throws -> [TicketListItem] {
-        try await fetchRemoteTickets(function: "get_received_tickets", perspective: .received)
+        try await fetchRemoteTickets(function: "get_received_tickets", perspective: .receiver)
+    }
+
+    func acknowledgeTicket(id: UUID) async throws {
+        do {
+            let result: String = try await client
+                .rpc("acknowledge_ticket", params: ["target_ticket_id": id.uuidString])
+                .execute()
+                .value
+            guard result == TicketStatus.received.rawValue else {
+                throw AppError.ticketAcknowledgementFailed
+            }
+        } catch {
+            throw map(error, action: "チケット受取確認")
+        }
+    }
+
+    func requestTicketUsage(id: UUID) async throws -> TicketUsageRequest {
+        do {
+            let records: [TicketUsageRequestRecord] = try await client
+                .rpc("request_ticket_usage", params: ["target_ticket_id": id.uuidString])
+                .execute()
+                .value
+            guard let record = records.first else {
+                throw AppError.ticketUsageRequestFailed
+            }
+            return TicketUsageRequest(record: record)
+        } catch {
+            throw map(error, action: "使用リクエスト")
+        }
+    }
+
+    func getRequestedTickets() async throws -> [TicketListItem] {
+        try await fetchRemoteTickets(function: "get_requested_tickets", perspective: .receiver)
+    }
+
+    func getWaitingTickets() async throws -> [TicketListItem] {
+        try await fetchRemoteTickets(function: "get_waiting_tickets", perspective: .sender)
     }
 
     private func persistDraft(_ ticket: TicketListItem) async throws {
@@ -118,7 +155,7 @@ final class SupabaseTicketRepository: TicketRepository {
 
     private func fetchRemoteTickets(
         function: String,
-        perspective: TicketStatus
+        perspective: TicketPerspective
     ) async throws -> [TicketListItem] {
         do {
             let records: [RemoteTicketRecord] = try await client
@@ -146,6 +183,10 @@ final class SupabaseTicketRepository: TicketRepository {
         if description.contains("already_transferred") || description.contains("23505") {
             return .ticketAlreadySent
         }
+        if description.contains("receiver_only") { return .ticketReceiverOnly }
+        if description.contains("ticket_not_sent") { return .ticketNotSent }
+        if description.contains("ticket_not_received") { return .ticketNotReceived }
+        if description.contains("already_requested") { return .ticketUsageAlreadyRequested }
         if description.contains("42501") || description.contains("permission") {
             return .ticketPermissionDenied
         }
@@ -215,6 +256,9 @@ private struct RemoteTicketRecord: Decodable {
     let createdAt: Date
     let updatedAt: Date
     let sentAt: Date?
+    let receivedAt: Date?
+    let requestedAt: Date?
+    let status: TicketStatus
     let senderName: String
     let receiverName: String
 
@@ -227,8 +271,29 @@ private struct RemoteTicketRecord: Decodable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case sentAt = "sent_at"
+        case receivedAt = "received_at"
+        case requestedAt = "requested_at"
+        case status
         case senderName = "sender_name"
         case receiverName = "receiver_name"
+    }
+}
+
+private struct TicketUsageRequestRecord: Decodable {
+    let id: UUID
+    let ticketID: UUID
+    let requesterID: UUID
+    let requestedAt: Date
+    let completedBy: UUID?
+    let completedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case ticketID = "ticket_id"
+        case requesterID = "requester_id"
+        case requestedAt = "requested_at"
+        case completedBy = "completed_by"
+        case completedAt = "completed_at"
     }
 }
 
@@ -248,7 +313,7 @@ private extension TicketTransfer {
 }
 
 private extension TicketListItem {
-    init(record: RemoteTicketRecord, perspective: TicketStatus) {
+    init(record: RemoteTicketRecord, perspective: TicketPerspective) {
         self.init(
             id: record.id,
             illustration: record.illustration.map(TicketIllustration.init(id:)),
@@ -259,12 +324,27 @@ private extension TicketListItem {
             createdAt: record.createdAt,
             updatedAt: record.updatedAt,
             sentAt: record.sentAt,
-            receivedAt: perspective == .received ? record.sentAt : nil,
-            status: perspective,
+            receivedAt: record.receivedAt,
+            requestedAt: record.requestedAt,
+            status: record.status,
+            perspective: perspective,
             design: TicketDesign(
                 backgroundColor: TicketBackgroundColor(rawValue: record.backgroundColor) ?? .white,
                 borderStyle: TicketBorderStyle(rawValue: record.borderStyle) ?? .simple
             )
+        )
+    }
+}
+
+private extension TicketUsageRequest {
+    init(record: TicketUsageRequestRecord) {
+        self.init(
+            id: record.id,
+            ticketID: record.ticketID,
+            requesterID: record.requesterID,
+            requestedAt: record.requestedAt,
+            completedBy: record.completedBy,
+            completedAt: record.completedAt
         )
     }
 }

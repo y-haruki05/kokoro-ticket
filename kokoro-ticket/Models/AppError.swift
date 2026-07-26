@@ -36,6 +36,12 @@ enum AppError: Error, LocalizedError, Equatable {
     case ticketAlreadySent
     case ticketPermissionDenied
     case ticketTransfer(description: String)
+    case ticketReceiverOnly
+    case ticketNotSent
+    case ticketNotReceived
+    case ticketUsageAlreadyRequested
+    case ticketAcknowledgementFailed
+    case ticketUsageRequestFailed
     case network(description: String)
     case repository(description: String)
 
@@ -111,6 +117,18 @@ enum AppError: Error, LocalizedError, Equatable {
             "このチケットを操作する権限がありません"
         case let .ticketTransfer(description):
             description
+        case .ticketReceiverOnly:
+            "チケットの受取人だけが操作できます"
+        case .ticketNotSent:
+            "送信済みのチケットだけ受け取れます"
+        case .ticketNotReceived:
+            "受取確認済みのチケットだけ使用をリクエストできます"
+        case .ticketUsageAlreadyRequested:
+            "このチケットはすでに使用リクエスト済みです"
+        case .ticketAcknowledgementFailed:
+            "チケットを受け取れませんでした"
+        case .ticketUsageRequestFailed:
+            "使用リクエストを送信できませんでした"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):

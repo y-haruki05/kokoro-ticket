@@ -2,9 +2,10 @@ import SwiftUI
 
 struct TicketStatusLabel: View {
     let status: TicketStatus
+    var title: String? = nil
 
     var body: some View {
-        Text(status.statusLabel)
+        Text(title ?? status.statusLabel)
             .font(.system(size: 11, weight: .bold, design: .rounded))
             .foregroundStyle(status == .completed ? AppColors.textSecondary : AppColors.primaryDark)
             .padding(.horizontal, 10)
