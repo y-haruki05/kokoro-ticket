@@ -78,6 +78,12 @@ struct RegisterView: View {
         } message: {
             Text(store.registrationMessage ?? "")
         }
+        .onChange(of: store.registrationMessage) { _, message in
+            guard message != nil else { return }
+            email = ""
+            password = ""
+            passwordConfirmation = ""
+        }
     }
 
     private var registrationMessagePresented: Binding<Bool> {

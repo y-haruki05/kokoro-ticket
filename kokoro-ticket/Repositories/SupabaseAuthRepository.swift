@@ -1,9 +1,14 @@
 import Foundation
+import OSLog
 import Supabase
 
 @MainActor
 final class SupabaseAuthRepository: AuthRepository {
     private let client: Supabase.SupabaseClient
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "kokoro-ticket",
+        category: "SupabaseAuth"
+    )
 
     init(clientProvider: any SupabaseClientProviding) {
         client = clientProvider.client
@@ -17,7 +22,7 @@ final class SupabaseAuthRepository: AuthRepository {
             )
             return response.session.map(AuthSession.init(session:))
         } catch {
-            throw map(error, action: "登録")
+            throw mapSignupError(error, email: email)
         }
     }
 
@@ -77,11 +82,91 @@ final class SupabaseAuthRepository: AuthRepository {
 
     private func map(_ error: Error, action: String) -> AppError {
         if let urlError = networkError(from: error) {
+            logger.error(
+                "\(action, privacy: .public) failed with network error code \(urlError.errorCode, privacy: .public)"
+            )
             return .network(description: urlError.localizedDescription)
         }
 
+        logger.error(
+            "\(action, privacy: .public) failed: type=\(String(reflecting: type(of: error)), privacy: .public)"
+        )
         return .authentication(
             description: "\(action)に失敗しました: \(error.localizedDescription)"
+        )
+    }
+
+    private func mapSignupError(_ error: Error, email: String) -> AppError {
+        if let urlError = networkError(from: error) {
+            logger.error(
+                "Sign up failed with network error code \(urlError.errorCode, privacy: .public)"
+            )
+            return .network(description: urlError.localizedDescription)
+        }
+
+        guard let authError = error as? AuthError else {
+            let safeMessage = sanitized(error.localizedDescription, email: email)
+            logger.error(
+                "Sign up failed: type=\(String(reflecting: type(of: error)), privacy: .public), message=\(safeMessage, privacy: .public)"
+            )
+            return .authentication(
+                description: "新規登録に失敗しました。もう一度お試しください"
+            )
+        }
+
+        let code = authError.errorCode.rawValue
+        let safeMessage = sanitized(authError.message, email: email)
+        logger.error(
+            "Sign up failed: type=AuthError, code=\(code, privacy: .public), message=\(safeMessage, privacy: .public)"
+        )
+
+        switch authError.errorCode {
+        case .emailExists, .userAlreadyExists, .identityAlreadyExists:
+            return .emailAlreadyRegistered
+        case .weakPassword:
+            return .passwordTooShort(minimumLength: 6)
+        case .overEmailSendRateLimit, .overRequestRateLimit:
+            return .signupRateLimited
+        case .signupDisabled, .emailProviderDisabled, .providerDisabled:
+            return .signupUnavailable
+        case .captchaFailed:
+            return .captchaFailed
+        case .emailAddressNotAuthorized:
+            return .confirmationEmailFailed
+        case .validationFailed:
+            return signupValidationError(message: authError.message)
+        case .unexpectedFailure:
+            if authError.message.localizedCaseInsensitiveContains("email") {
+                return .confirmationEmailFailed
+            }
+            return .authentication(
+                description: "新規登録に失敗しました。しばらく待ってからもう一度お試しください"
+            )
+        default:
+            return .authentication(
+                description: "新規登録に失敗しました。もう一度お試しください"
+            )
+        }
+    }
+
+    private func signupValidationError(message: String) -> AppError {
+        let lowercased = message.lowercased()
+        if lowercased.contains("email") {
+            return .invalidEmail
+        }
+        if lowercased.contains("password") {
+            return .passwordTooShort(minimumLength: 6)
+        }
+        return .authentication(
+            description: "入力内容を確認して、もう一度お試しください"
+        )
+    }
+
+    private func sanitized(_ message: String, email: String) -> String {
+        message.replacingOccurrences(
+            of: email,
+            with: "<redacted-email>",
+            options: [.caseInsensitive]
         )
     }
 

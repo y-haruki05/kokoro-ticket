@@ -42,10 +42,18 @@ final class SessionStore {
     }
 
     func signIn(email: String, password: String) async {
+        guard !isLoading else { return }
+
         do {
-            try validate(email: email, password: password)
+            let normalizedEmail = try validatedEmail(email)
+            try validatePassword(password)
             isLoading = true
-            apply(try await repository.signIn(email: email, password: password))
+            apply(
+                try await repository.signIn(
+                    email: normalizedEmail,
+                    password: password
+                )
+            )
             authError = nil
         } catch {
             authError = normalized(error)
@@ -58,15 +66,18 @@ final class SessionStore {
         password: String,
         passwordConfirmation: String
     ) async {
+        guard !isLoading else { return }
+
         do {
-            try validate(email: email, password: password)
+            let normalizedEmail = try validatedEmail(email)
+            try validatePassword(password, minimumLength: 6)
             guard password == passwordConfirmation else {
                 throw AppError.passwordMismatch
             }
 
             isLoading = true
             let newSession = try await repository.signUp(
-                email: email,
+                email: normalizedEmail,
                 password: password
             )
             apply(newSession)
@@ -81,6 +92,8 @@ final class SessionStore {
     }
 
     func signOut() async {
+        guard !isLoading else { return }
+
         do {
             isLoading = true
             try await repository.signOut()
@@ -115,12 +128,19 @@ final class SessionStore {
         currentUser = session?.user
     }
 
-    private func validate(email: String, password: String) throws {
-        guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw AppError.emailRequired
-        }
+    private func validatedEmail(_ email: String) throws -> String {
+        try EmailAddressValidator.normalized(email)
+    }
+
+    private func validatePassword(
+        _ password: String,
+        minimumLength: Int? = nil
+    ) throws {
         guard !password.isEmpty else {
             throw AppError.passwordRequired
+        }
+        if let minimumLength, password.count < minimumLength {
+            throw AppError.passwordTooShort(minimumLength: minimumLength)
         }
     }
 
