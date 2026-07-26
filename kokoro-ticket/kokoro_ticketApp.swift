@@ -36,6 +36,9 @@ struct kokoro_ticketApp: App {
                 authRepository: SupabaseAuthRepository(
                     clientProvider: supabaseClientProvider
                 ),
+                profileRepository: SupabaseProfileRepository(
+                    clientProvider: supabaseClientProvider
+                ),
                 ticketRepository: SwiftDataTicketRepository(
                     modelContext: modelContainer.mainContext
                 )

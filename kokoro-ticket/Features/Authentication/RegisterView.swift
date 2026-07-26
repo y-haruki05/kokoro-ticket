@@ -26,6 +26,7 @@ struct RegisterView: View {
                         title: "メールアドレス",
                         placeholder: "example@example.com",
                         text: $email,
+                        usesEmailKeyboard: true,
                         textContentType: .emailAddress
                     )
 

@@ -5,6 +5,7 @@ struct AuthenticationFormField: View {
     let placeholder: String
     @Binding var text: String
     var isSecure = false
+    var usesEmailKeyboard = false
     var textContentType: UITextContentType?
 
     var body: some View {
@@ -16,10 +17,12 @@ struct AuthenticationFormField: View {
             Group {
                 if isSecure {
                     SecureField(placeholder, text: $text)
-                } else {
+                } else if usesEmailKeyboard {
                     TextField(placeholder, text: $text)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
+                } else {
+                    TextField(placeholder, text: $text)
                 }
             }
             .textContentType(textContentType)
@@ -43,6 +46,7 @@ struct AuthenticationFormField: View {
         title: "メールアドレス",
         placeholder: "example@example.com",
         text: $text,
+        usesEmailKeyboard: true,
         textContentType: .emailAddress
     )
     .padding()
