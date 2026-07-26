@@ -4,11 +4,22 @@ struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var ticketStore: TicketStore
     @State private var isShowingTicketDetail = false
+    private let currentUserEmail: String?
+    private let isAuthLoading: Bool
+    private let onLogout: () -> Void
 
-    init(repository: any TicketRepository) {
+    init(
+        repository: any TicketRepository,
+        currentUserEmail: String? = nil,
+        isAuthLoading: Bool = false,
+        onLogout: @escaping () -> Void = {}
+    ) {
         _ticketStore = State(
             initialValue: TicketStore(repository: repository)
         )
+        self.currentUserEmail = currentUserEmail
+        self.isAuthLoading = isAuthLoading
+        self.onLogout = onLogout
     }
 
     var body: some View {
@@ -55,7 +66,11 @@ struct MainTabView: View {
                 }
                     .tag(AppTab.memories)
 
-                placeholderScreen(title: "マイページ")
+                ProfileView(
+                    email: currentUserEmail,
+                    isLoading: isAuthLoading,
+                    onLogout: onLogout
+                )
                     .tag(AppTab.profile)
             }
             .toolbar(.hidden, for: .tabBar)
@@ -67,16 +82,6 @@ struct MainTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
-    private func placeholderScreen(title: String) -> some View {
-        NavigationStack {
-            Text(title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppColors.background)
-                .navigationTitle(title)
-        }
-    }
 }
 
 private enum AppTab: String, CaseIterable {

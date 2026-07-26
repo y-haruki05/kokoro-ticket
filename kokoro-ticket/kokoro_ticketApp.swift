@@ -32,8 +32,11 @@ struct kokoro_ticketApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainTabView(
-                repository: SwiftDataTicketRepository(
+            AuthenticationRootView(
+                authRepository: SupabaseAuthRepository(
+                    clientProvider: supabaseClientProvider
+                ),
+                ticketRepository: SwiftDataTicketRepository(
                     modelContext: modelContainer.mainContext
                 )
             )
