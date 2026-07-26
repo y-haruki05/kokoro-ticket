@@ -2,3 +2,5 @@
 
 SUPABASE_URL = https:/$()/release-placeholder.supabase.co
 SUPABASE_ANON_KEY = release-placeholder-anon-key
+
+#include? "Secrets.local.xcconfig"
