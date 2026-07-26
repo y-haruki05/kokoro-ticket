@@ -47,6 +47,10 @@ struct MainTabView: View {
                         },
                         onDetailVisibilityChange: { isShowing in
                             isShowingTicketDetail = isShowing
+                        },
+                        onTicketCompleted: {
+                            isShowingTicketDetail = false
+                            selection = .memories
                         }
                     )
                 }

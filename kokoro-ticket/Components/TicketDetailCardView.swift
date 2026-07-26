@@ -61,6 +61,17 @@ struct TicketDetailCardView: View {
                 .padding(.top, -4)
             }
 
+            if let receivedAt = ticket.receivedAt {
+                HStack {
+                    metadata(
+                        title: "受取日時",
+                        value: receivedAt.formatted(date: .numeric, time: .shortened)
+                    )
+                    Spacer()
+                }
+                .padding(.top, -4)
+            }
+
             if let completedAt = ticket.completedAt {
                 HStack {
                     metadata(

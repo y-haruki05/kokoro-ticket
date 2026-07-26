@@ -40,6 +40,9 @@ struct MemoriesView: View {
                     .opacity(hasAppeared ? 1 : 0)
                 }
             }
+            .refreshable {
+                await store.reloadCompletedTickets()
+            }
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
@@ -57,11 +60,13 @@ struct MemoriesView: View {
                 hasAppeared = true
             }
         }
+        .task {
+            await store.reloadCompletedTickets()
+        }
     }
 
     private var usedTickets: [TicketListItem] {
-        store.tickets
-            .filter { $0.status == .completed }
+        store.completedTickets
             .sorted {
                 ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast)
             }
@@ -72,6 +77,15 @@ struct MemoriesView: View {
     NavigationStack {
         MemoriesView(
             store: TicketStore(tickets: MockTicketListItems.items),
+            onCreateTicket: {}
+        )
+    }
+}
+
+#Preview("思い出なし") {
+    NavigationStack {
+        MemoriesView(
+            store: TicketStore(tickets: []),
             onCreateTicket: {}
         )
     }

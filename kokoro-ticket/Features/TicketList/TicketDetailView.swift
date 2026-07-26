@@ -5,12 +5,12 @@ struct TicketDetailView: View {
     let store: TicketStore
     var friendStore: FriendStore? = nil
     var onTicketSent: () -> Void = {}
+    var onTicketCompleted: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @State private var pendingAction: TicketDetailAction?
     @State private var isShowingFriendSelection = false
     @State private var isShowingEditor = false
-    @State private var isCompletingTicket = false
     @State private var isShowingCompletionAnimation = false
 
     var body: some View {
@@ -86,14 +86,34 @@ struct TicketDetailView: View {
                 }
             }
         }
+        .alert(
+            "チケットを完了できませんでした",
+            isPresented: Binding(
+                get: { store.completionError != nil },
+                set: { if !$0 { store.clearCompletionError() } }
+            ),
+            presenting: store.completionError
+        ) { _ in
+            Button("OK") { store.clearCompletionError() }
+        } message: { error in
+            Text(error.localizedDescription)
+        }
     }
 
     @ViewBuilder
     private func actionArea(for ticket: TicketListItem) -> some View {
         if ticket.detailActions.isEmpty {
-            Text("完了したチケットです")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
+            VStack(spacing: 4) {
+                Text(readOnlyStatusText(for: ticket))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+
+                if let completedAt = ticket.completedAt {
+                    Text(completedAt.formatted(date: .numeric, time: .shortened))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(AppColors.textSecondary.opacity(0.8))
+                }
+            }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .background(.ultraThinMaterial)
@@ -116,9 +136,8 @@ struct TicketDetailView: View {
         } label: {
             ZStack {
                 Text(action.title)
-                    .opacity(store.isRequesting ? 0 : 1)
-                if store.isRequesting,
-                   action == .acknowledgeReceipt || action == .requestUsage {
+                    .opacity(isActionLoading(action) ? 0 : 1)
+                if isActionLoading(action) {
                     ProgressView()
                         .tint(.white)
                 }
@@ -136,7 +155,7 @@ struct TicketDetailView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
-        .disabled(isCompletingTicket || store.isRequesting)
+        .disabled(store.isCompleting || store.isRequesting)
     }
 
     private func handle(_ action: TicketDetailAction) {
@@ -188,29 +207,28 @@ struct TicketDetailView: View {
 
     private func completeTicket() {
         guard
-            !isCompletingTicket,
+            !store.isCompleting,
             !isShowingCompletionAnimation,
-            store.ticket(id: ticketID)?.status == .requested
+            let ticket = store.ticket(id: ticketID),
+            ticket.status == .requested,
+            ticket.perspective != .receiver
         else {
             pendingAction = nil
             return
         }
 
         pendingAction = nil
-        isCompletingTicket = true
-
-        guard store.complete(id: ticketID) else {
-            isCompletingTicket = false
-            return
+        Task {
+            guard await store.completeTicket(id: ticketID) else {
+                return
+            }
+            isShowingCompletionAnimation = true
         }
-
-        isShowingCompletionAnimation = true
     }
 
     private func finishCompletionAnimation() {
-        guard isCompletingTicket else { return }
         isShowingCompletionAnimation = false
-        isCompletingTicket = false
+        onTicketCompleted()
     }
 
     private var confirmationBinding: Binding<Bool> {
@@ -259,6 +277,29 @@ struct TicketDetailView: View {
         action == .delete ? .red.opacity(0.65) : AppColors.primary
     }
 
+    private func isActionLoading(_ action: TicketDetailAction) -> Bool {
+        if action == .complete {
+            return store.isCompleting
+        }
+        return store.isRequesting
+            && (action == .acknowledgeReceipt || action == .requestUsage)
+    }
+
+    private func readOnlyStatusText(for ticket: TicketListItem) -> String {
+        switch (ticket.perspective, ticket.status) {
+        case (_, .completed):
+            "完了しました"
+        case (.receiver, .requested):
+            "相手の対応待ち"
+        case (.sender, .requested):
+            "対応待ち"
+        case (.sender, .sent), (.sender, .received):
+            "送信済みです"
+        default:
+            ticket.statusDisplayName
+        }
+    }
+
     private var unavailableContent: some View {
         VStack(spacing: 18) {
             TicketDetailHeaderView {
@@ -289,6 +330,62 @@ struct TicketDetailView: View {
                 ),
                 friends: [FriendPreviewData.friend]
             )
+        )
+    }
+}
+
+#Preview("requested・送り主") {
+    let ticket = MockTicketListItems.items[3].viewed(as: .sender)
+    NavigationStack {
+        TicketDetailView(
+            ticketID: ticket.id,
+            store: TicketStore(previewTickets: [ticket])
+        )
+    }
+}
+
+#Preview("requested・受取人") {
+    let ticket = MockTicketListItems.items[3].viewed(as: .receiver)
+    NavigationStack {
+        TicketDetailView(
+            ticketID: ticket.id,
+            store: TicketStore(previewTickets: [ticket])
+        )
+    }
+}
+
+#Preview("完了処理中") {
+    let ticket = MockTicketListItems.items[3].viewed(as: .sender)
+    NavigationStack {
+        TicketDetailView(
+            ticketID: ticket.id,
+            store: TicketStore(
+                previewTickets: [ticket],
+                isCompleting: true
+            )
+        )
+    }
+}
+
+#Preview("完了エラー") {
+    let ticket = MockTicketListItems.items[3].viewed(as: .sender)
+    NavigationStack {
+        TicketDetailView(
+            ticketID: ticket.id,
+            store: TicketStore(
+                previewTickets: [ticket],
+                completionError: .ticketCompletionFailed
+            )
+        )
+    }
+}
+
+#Preview("completed詳細") {
+    let ticket = MockTicketListItems.items[4].viewed(as: .receiver)
+    NavigationStack {
+        TicketDetailView(
+            ticketID: ticket.id,
+            store: TicketStore(previewTickets: [ticket])
         )
     }
 }

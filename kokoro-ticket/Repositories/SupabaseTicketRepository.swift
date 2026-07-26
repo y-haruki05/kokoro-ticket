@@ -131,6 +131,24 @@ final class SupabaseTicketRepository: TicketRepository {
         try await fetchRemoteTickets(function: "get_waiting_tickets", perspective: .sender)
     }
 
+    func completeTicket(id: UUID) async throws {
+        do {
+            let result: String = try await client
+                .rpc("complete_ticket", params: ["target_ticket_id": id.uuidString])
+                .execute()
+                .value
+            guard result == TicketStatus.completed.rawValue else {
+                throw AppError.ticketCompletionFailed
+            }
+        } catch {
+            throw map(error, action: "チケット完了")
+        }
+    }
+
+    func getCompletedTickets() async throws -> [TicketListItem] {
+        try await fetchRemoteTickets(function: "get_completed_tickets", perspective: .local)
+    }
+
     private func persistDraft(_ ticket: TicketListItem) async throws {
         guard let ownerID = client.auth.currentUser?.id else {
             throw AppError.authenticatedUserUnavailable
@@ -187,6 +205,15 @@ final class SupabaseTicketRepository: TicketRepository {
         if description.contains("ticket_not_sent") { return .ticketNotSent }
         if description.contains("ticket_not_received") { return .ticketNotReceived }
         if description.contains("already_requested") { return .ticketUsageAlreadyRequested }
+        if description.contains("sender_only") { return .ticketSenderOnly }
+        if description.contains("already_completed") { return .ticketAlreadyCompleted }
+        if description.contains("ticket_not_requested") { return .ticketNotRequested }
+        if description.contains("usage_request_not_found") {
+            return .ticketUsageRequestNotFound
+        }
+        if description.contains("ticket_not_found") {
+            return .ticketTransfer(description: "チケットが見つかりません")
+        }
         if description.contains("42501") || description.contains("permission") {
             return .ticketPermissionDenied
         }
@@ -258,6 +285,7 @@ private struct RemoteTicketRecord: Decodable {
     let sentAt: Date?
     let receivedAt: Date?
     let requestedAt: Date?
+    let completedAt: Date?
     let status: TicketStatus
     let senderName: String
     let receiverName: String
@@ -273,6 +301,7 @@ private struct RemoteTicketRecord: Decodable {
         case sentAt = "sent_at"
         case receivedAt = "received_at"
         case requestedAt = "requested_at"
+        case completedAt = "completed_at"
         case status
         case senderName = "sender_name"
         case receiverName = "receiver_name"
@@ -326,6 +355,7 @@ private extension TicketListItem {
             sentAt: record.sentAt,
             receivedAt: record.receivedAt,
             requestedAt: record.requestedAt,
+            completedAt: record.completedAt,
             status: record.status,
             perspective: perspective,
             design: TicketDesign(

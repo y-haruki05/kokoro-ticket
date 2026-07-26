@@ -3,6 +3,7 @@ import SwiftUI
 struct TicketUsageAnimationView: View {
     let ticket: TicketListItem
     let onAnimationCompleted: () -> Void
+    var reduceMotionOverride: Bool? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -94,7 +95,7 @@ struct TicketUsageAnimationView: View {
         guard !hasStarted else { return }
         hasStarted = true
 
-        if reduceMotion {
+        if reduceMotionOverride ?? reduceMotion {
             await playReducedMotionSequence()
         } else {
             await playTearSequence()
@@ -174,5 +175,27 @@ struct TicketUsageAnimationView: View {
     TicketUsageAnimationView(
         ticket: MockTicketListItems.items[0],
         onAnimationCompleted: {}
+    )
+}
+
+#Preview("半券破り演出前") {
+    TornTicketView(
+        ticket: MockTicketListItems.items[3],
+        isTorn: false,
+        isLeftReleased: false,
+        isRightReleased: false,
+        stretchX: 1,
+        stretchY: 1,
+        opacity: 1
+    )
+    .padding()
+    .background(AppColors.primarySoft)
+}
+
+#Preview("Reduce Motion") {
+    TicketUsageAnimationView(
+        ticket: MockTicketListItems.items[4],
+        onAnimationCompleted: {},
+        reduceMotionOverride: true
     )
 }

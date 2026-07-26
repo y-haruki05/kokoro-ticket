@@ -117,6 +117,8 @@ struct TicketListItem: Identifiable, Hashable {
             [.acknowledgeReceipt]
         case (.receiver, .received):
             [.requestUsage]
+        case (.sender, .requested):
+            [.complete]
         case (.local, .sent):
             [.acknowledgeReceipt]
         case (.local, .received):

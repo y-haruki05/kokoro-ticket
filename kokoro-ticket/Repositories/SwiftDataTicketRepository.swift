@@ -107,6 +107,17 @@ final class SwiftDataTicketRepository: TicketRepository {
         []
     }
 
+    func completeTicket(id: UUID) async throws {
+        try complete(id: id, at: .now)
+    }
+
+    func getCompletedTickets() async throws -> [TicketListItem] {
+        try fetchAll()
+            .filter { $0.status == .completed }
+            .map(TicketListItem.init(ticket:))
+            .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
+    }
+
     private func fetchTicket(id: UUID) throws -> Ticket {
         let ticketID = id
         let descriptor = FetchDescriptor<Ticket>(
