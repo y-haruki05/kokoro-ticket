@@ -48,6 +48,9 @@ final class FriendStore {
             (self.friends, incomingRequests, outgoingRequests) = try await (
                 friends, incoming, outgoing
             )
+            self.friends = unique(self.friends)
+            incomingRequests = unique(incomingRequests)
+            outgoingRequests = unique(outgoingRequests)
             error = nil
         } catch {
             self.error = normalize(error)
@@ -105,6 +108,17 @@ final class FriendStore {
         requestMessage = nil
     }
 
+    @discardableResult
+    func reloadFromRealtime() async -> Bool {
+        var attempts = 0
+        while isLoading, attempts < 5 {
+            attempts += 1
+            try? await Task.sleep(for: .milliseconds(120))
+        }
+        await reload()
+        return error == nil
+    }
+
     private func respond(_ request: FriendRequest, accepts: Bool) async {
         guard !processingRequestIDs.contains(request.id) else { return }
         processingRequestIDs.insert(request.id)
@@ -144,5 +158,11 @@ final class FriendStore {
             return .network(description: urlError.localizedDescription)
         }
         return .friend(description: "フレンド情報の処理に失敗しました")
+    }
+
+    private func unique<Value: Identifiable>(_ values: [Value]) -> [Value]
+    where Value.ID == UUID {
+        var seen = Set<UUID>()
+        return values.filter { seen.insert($0.id).inserted }
     }
 }

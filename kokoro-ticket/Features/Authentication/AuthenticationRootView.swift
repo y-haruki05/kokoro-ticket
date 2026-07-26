@@ -1,8 +1,10 @@
 import SwiftUI
 
+@MainActor
 struct AuthenticationRootView: View {
     private let ticketRepository: any TicketRepository
     private let friendRepository: any FriendRepository
+    private let realtimeService: any RealtimeService
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
@@ -12,10 +14,12 @@ struct AuthenticationRootView: View {
         authRepository: any AuthRepository,
         profileRepository: any ProfileRepository,
         friendRepository: any FriendRepository,
-        ticketRepository: any TicketRepository
+        ticketRepository: any TicketRepository,
+        realtimeService: (any RealtimeService)? = nil
     ) {
         self.ticketRepository = ticketRepository
         self.friendRepository = friendRepository
+        self.realtimeService = realtimeService ?? InMemoryRealtimeService()
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
         )
@@ -40,8 +44,10 @@ struct AuthenticationRootView: View {
                     repository: ticketRepository,
                     friendRepository: friendRepository,
                     profileStore: profileStore,
+                    currentUserID: sessionStore.currentUser?.id,
                     currentUserEmail: sessionStore.currentUser?.email,
                     isAuthLoading: sessionStore.isLoading,
+                    realtimeService: realtimeService,
                     onLogout: {
                         Task {
                             await sessionStore.signOut()

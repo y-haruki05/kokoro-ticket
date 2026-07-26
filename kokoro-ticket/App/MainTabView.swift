@@ -1,30 +1,46 @@
 import SwiftUI
 
+@MainActor
 struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var ticketStore: TicketStore
     @State private var friendStore: FriendStore
+    @State private var realtimeCoordinator: RealtimeSyncCoordinator
     @State private var isShowingTicketDetail = false
     private let profileStore: ProfileStore
+    private let currentUserID: UUID?
     private let currentUserEmail: String?
     private let isAuthLoading: Bool
     private let onLogout: () -> Void
+    @Environment(\.scenePhase) private var scenePhase
 
     init(
         repository: any TicketRepository,
         friendRepository: any FriendRepository,
         profileStore: ProfileStore,
+        currentUserID: UUID? = nil,
         currentUserEmail: String? = nil,
         isAuthLoading: Bool = false,
+        realtimeService: (any RealtimeService)? = nil,
         onLogout: @escaping () -> Void = {}
     ) {
+        let ticketStore = TicketStore(repository: repository)
+        let friendStore = FriendStore(repository: friendRepository)
         _ticketStore = State(
-            initialValue: TicketStore(repository: repository)
+            initialValue: ticketStore
         )
         _friendStore = State(
-            initialValue: FriendStore(repository: friendRepository)
+            initialValue: friendStore
+        )
+        _realtimeCoordinator = State(
+            initialValue: RealtimeSyncCoordinator(
+                service: realtimeService ?? InMemoryRealtimeService(),
+                friendStore: friendStore,
+                ticketStore: ticketStore
+            )
         )
         self.profileStore = profileStore
+        self.currentUserID = currentUserID
         self.currentUserEmail = currentUserEmail
         self.isAuthLoading = isAuthLoading
         self.onLogout = onLogout
@@ -98,6 +114,56 @@ struct MainTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .task {
             await ticketStore.reloadRemoteTickets()
+        }
+        .task(id: currentUserID) {
+            guard let currentUserID else { return }
+            await realtimeCoordinator.start(userID: currentUserID)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard let currentUserID else { return }
+            Task {
+                switch phase {
+                case .active:
+                    await realtimeCoordinator.resume(userID: currentUserID)
+                case .background:
+                    await realtimeCoordinator.stop()
+                case .inactive:
+                    break
+                @unknown default:
+                    break
+                }
+            }
+        }
+        .onDisappear {
+            Task {
+                await realtimeCoordinator.stop()
+            }
+        }
+        .overlay(alignment: .top) {
+            if let error = realtimeCoordinator.connectionError {
+                Button {
+                    Task {
+                        await realtimeCoordinator.retry()
+                    }
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "arrow.clockwise")
+                        Text(error.localizedDescription)
+                            .lineLimit(1)
+                    }
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.primaryDark)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(AppColors.cardBackground)
+                    .clipShape(Capsule())
+                    .overlay {
+                        Capsule().stroke(AppColors.border, lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+            }
         }
     }
 
@@ -201,4 +267,48 @@ private struct AppTabBar: View {
             isLoading: false
         )
     )
+}
+
+#Preview("Realtime再接続中") {
+    let profile = Profile.preview
+
+    MainTabView(
+        repository: InMemoryTicketRepository(),
+        friendRepository: InMemoryFriendRepository(),
+        profileStore: ProfileStore(
+            repository: InMemoryProfileRepository(profile: profile),
+            profile: profile,
+            isLoading: false
+        ),
+        currentUserID: profile.id,
+        realtimeService: InMemoryRealtimeService(
+            startError: .realtimeConnectionFailed
+        )
+    )
+}
+
+#Preview("Realtime重複・順序逆転イベント") {
+    let profile = Profile.preview
+    let realtime = InMemoryRealtimeService()
+
+    MainTabView(
+        repository: InMemoryTicketRepository(
+            tickets: MockTicketListItems.items.map(Ticket.init(item:))
+        ),
+        friendRepository: InMemoryFriendRepository(),
+        profileStore: ProfileStore(
+            repository: InMemoryProfileRepository(profile: profile),
+            profile: profile,
+            isLoading: false
+        ),
+        currentUserID: profile.id,
+        realtimeService: realtime
+    )
+    .task {
+        realtime.emit(RealtimeEvent(area: .tickets, table: "ticket_usage_requests"))
+        realtime.emit(RealtimeEvent(area: .tickets, table: "ticket_transfers"))
+        realtime.emit(RealtimeEvent(area: .tickets, table: "ticket_usage_requests"))
+        realtime.emit(RealtimeEvent(area: .friends, table: "friend_requests"))
+        realtime.emit(RealtimeEvent(area: .friends, table: "friendships"))
+    }
 }
