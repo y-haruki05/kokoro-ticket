@@ -4,12 +4,14 @@ struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var ticketStore: TicketStore
     @State private var isShowingTicketDetail = false
+    private let profileStore: ProfileStore
     private let currentUserEmail: String?
     private let isAuthLoading: Bool
     private let onLogout: () -> Void
 
     init(
         repository: any TicketRepository,
+        profileStore: ProfileStore,
         currentUserEmail: String? = nil,
         isAuthLoading: Bool = false,
         onLogout: @escaping () -> Void = {}
@@ -17,6 +19,7 @@ struct MainTabView: View {
         _ticketStore = State(
             initialValue: TicketStore(repository: repository)
         )
+        self.profileStore = profileStore
         self.currentUserEmail = currentUserEmail
         self.isAuthLoading = isAuthLoading
         self.onLogout = onLogout
@@ -67,8 +70,10 @@ struct MainTabView: View {
                     .tag(AppTab.memories)
 
                 ProfileView(
+                    store: profileStore,
                     email: currentUserEmail,
-                    isLoading: isAuthLoading,
+                    isAuthLoading: isAuthLoading,
+                    clipboard: SystemClipboardService(),
                     onLogout: onLogout
                 )
                     .tag(AppTab.profile)
@@ -169,9 +174,16 @@ private struct AppTabBar: View {
 }
 
 #Preview {
+    let profile = Profile.preview
+
     MainTabView(
         repository: InMemoryTicketRepository(
             tickets: MockTicketListItems.items.map(Ticket.init(item:))
+        ),
+        profileStore: ProfileStore(
+            repository: InMemoryProfileRepository(profile: profile),
+            profile: profile,
+            isLoading: false
         )
     )
 }

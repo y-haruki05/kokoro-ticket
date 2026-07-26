@@ -1,0 +1,89 @@
+import Foundation
+
+@MainActor
+final class InMemoryProfileRepository: ProfileRepository {
+    private let currentUserID: UUID
+    private let generator: FriendCodeGenerator
+    private var profile: Profile?
+    private var reservedFriendCodes: Set<String>
+    private var codeCandidates: [String]
+
+    init(
+        currentUserID: UUID = UUID(),
+        profile: Profile? = nil,
+        reservedFriendCodes: Set<String> = [],
+        codeCandidates: [String] = [],
+        generator: FriendCodeGenerator = FriendCodeGenerator()
+    ) {
+        self.currentUserID = currentUserID
+        self.profile = profile
+        self.reservedFriendCodes = reservedFriendCodes
+        self.codeCandidates = codeCandidates
+        self.generator = generator
+
+        if let profile {
+            self.reservedFriendCodes.insert(profile.friendCode)
+        }
+    }
+
+    func fetchCurrentProfile() async throws -> Profile? {
+        profile
+    }
+
+    func createProfile(
+        displayName: String,
+        avatarKey: String?
+    ) async throws -> Profile {
+        if let profile {
+            return profile
+        }
+
+        let friendCode = try await availableFriendCode()
+        let now = Date.now
+        let newProfile = Profile(
+            id: currentUserID,
+            displayName: displayName,
+            friendCode: friendCode,
+            avatarKey: avatarKey,
+            createdAt: now,
+            updatedAt: now
+        )
+
+        profile = newProfile
+        reservedFriendCodes.insert(friendCode)
+        return newProfile
+    }
+
+    func updateDisplayName(_ displayName: String) async throws -> Profile {
+        guard var profile else {
+            throw AppError.profileNotFound
+        }
+
+        profile.displayName = displayName
+        profile.updatedAt = .now
+        self.profile = profile
+        return profile
+    }
+
+    func isFriendCodeAvailable(_ friendCode: String) async throws -> Bool {
+        !reservedFriendCodes.contains(friendCode)
+    }
+
+    func reloadCurrentProfile() async throws -> Profile? {
+        profile
+    }
+
+    private func availableFriendCode(maxAttempts: Int = 10) async throws -> String {
+        for _ in 0..<maxAttempts {
+            let candidate = codeCandidates.isEmpty
+                ? generator.generate()
+                : codeCandidates.removeFirst()
+
+            if try await isFriendCodeAvailable(candidate) {
+                return candidate
+            }
+        }
+
+        throw AppError.friendCodeGenerationFailed
+    }
+}

@@ -7,6 +7,12 @@ enum AppError: Error, LocalizedError, Equatable {
     case passwordRequired
     case passwordMismatch
     case authentication(description: String)
+    case authenticatedUserUnavailable
+    case invalidDisplayName
+    case profileNotFound
+    case profile(description: String)
+    case friendCodeGenerationFailed
+    case friendCodeDuplicated
     case network(description: String)
     case repository(description: String)
 
@@ -24,6 +30,18 @@ enum AppError: Error, LocalizedError, Equatable {
             "パスワードが一致しません"
         case let .authentication(description):
             description
+        case .authenticatedUserUnavailable:
+            "ログインユーザーを確認できませんでした"
+        case .invalidDisplayName:
+            "表示名は1〜30文字で入力してください"
+        case .profileNotFound:
+            "プロフィールが見つかりません"
+        case let .profile(description):
+            description
+        case .friendCodeGenerationFailed:
+            "フレンドコードを発行できませんでした。もう一度お試しください"
+        case .friendCodeDuplicated:
+            "フレンドコードが重複しました。もう一度お試しください"
         case let .network(description):
             "通信に失敗しました: \(description)"
         case let .repository(description):

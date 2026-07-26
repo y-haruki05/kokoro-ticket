@@ -3,15 +3,21 @@ import SwiftUI
 struct AuthenticationRootView: View {
     private let ticketRepository: any TicketRepository
     @State private var sessionStore: SessionStore
+    @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
+    @State private var loadedProfileUserID: UUID?
 
     init(
         authRepository: any AuthRepository,
+        profileRepository: any ProfileRepository,
         ticketRepository: any TicketRepository
     ) {
         self.ticketRepository = ticketRepository
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
+        )
+        _profileStore = State(
+            initialValue: ProfileStore(repository: profileRepository)
         )
     }
 
@@ -19,9 +25,17 @@ struct AuthenticationRootView: View {
         Group {
             if !didRestoreSession {
                 launchView
-            } else if sessionStore.isAuthenticated {
+            } else if !sessionStore.isAuthenticated {
+                LoginView(store: sessionStore)
+            } else if loadedProfileUserID != sessionStore.currentUser?.id
+                        || profileStore.isLoading {
+                launchView
+            } else if !profileStore.isProfileCompleted {
+                ProfileSetupView(store: profileStore)
+            } else {
                 MainTabView(
                     repository: ticketRepository,
+                    profileStore: profileStore,
                     currentUserEmail: sessionStore.currentUser?.email,
                     isAuthLoading: sessionStore.isLoading,
                     onLogout: {
@@ -30,8 +44,6 @@ struct AuthenticationRootView: View {
                         }
                     }
                 )
-            } else {
-                LoginView(store: sessionStore)
             }
         }
         .authErrorAlert(store: sessionStore)
@@ -39,6 +51,17 @@ struct AuthenticationRootView: View {
             guard !didRestoreSession else { return }
             await sessionStore.restoreSession()
             didRestoreSession = true
+        }
+        .task(id: sessionStore.currentUser?.id) {
+            guard let userID = sessionStore.currentUser?.id else {
+                loadedProfileUserID = nil
+                profileStore.reset()
+                return
+            }
+
+            loadedProfileUserID = nil
+            await profileStore.loadProfile(hasAuthenticatedUser: true)
+            loadedProfileUserID = userID
         }
     }
 
@@ -59,18 +82,48 @@ struct AuthenticationRootView: View {
 #Preview("未ログイン") {
     AuthenticationRootView(
         authRepository: InMemoryAuthRepository(),
+        profileRepository: InMemoryProfileRepository(),
         ticketRepository: InMemoryTicketRepository()
     )
 }
 
 #Preview("ログイン済み") {
+    let userID = UUID()
+    let profile = Profile(
+        id: userID,
+        displayName: "こころ",
+        friendCode: "KRTK7M2P",
+        avatarKey: nil,
+        createdAt: .now,
+        updatedAt: .now
+    )
+
     AuthenticationRootView(
         authRepository: InMemoryAuthRepository(
             session: AuthSession(
-                user: AuthUser(id: UUID(), email: "preview@example.com"),
+                user: AuthUser(id: userID, email: "preview@example.com"),
                 expiresAt: .now.addingTimeInterval(3_600)
             )
         ),
+        profileRepository: InMemoryProfileRepository(
+            currentUserID: userID,
+            profile: profile
+        ),
+        ticketRepository: InMemoryTicketRepository()
+    )
+}
+
+#Preview("プロフィール未設定") {
+    let userID = UUID()
+
+    AuthenticationRootView(
+        authRepository: InMemoryAuthRepository(
+            session: AuthSession(
+                user: AuthUser(id: userID, email: "preview@example.com"),
+                expiresAt: .now.addingTimeInterval(3_600)
+            )
+        ),
+        profileRepository: InMemoryProfileRepository(currentUserID: userID),
         ticketRepository: InMemoryTicketRepository()
     )
 }
