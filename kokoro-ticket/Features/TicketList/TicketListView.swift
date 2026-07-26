@@ -2,10 +2,25 @@ import SwiftUI
 
 struct TicketListView: View {
     let store: TicketStore
+    let friendStore: FriendStore
     let onCreateTicket: () -> Void
     var onDetailVisibilityChange: (Bool) -> Void = { _ in }
 
-    @State private var selectedStatus: TicketStatus = .draft
+    @State private var selectedStatus: TicketStatus
+
+    init(
+        store: TicketStore,
+        friendStore: FriendStore,
+        onCreateTicket: @escaping () -> Void,
+        onDetailVisibilityChange: @escaping (Bool) -> Void = { _ in },
+        initialStatus: TicketStatus = .draft
+    ) {
+        self.store = store
+        self.friendStore = friendStore
+        self.onCreateTicket = onCreateTicket
+        self.onDetailVisibilityChange = onDetailVisibilityChange
+        _selectedStatus = State(initialValue: initialStatus)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,13 +55,56 @@ struct TicketListView: View {
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .navigationDestination(for: TicketListItem.ID.self) { ticketID in
-            TicketDetailView(ticketID: ticketID, store: store)
+            TicketDetailView(
+                ticketID: ticketID,
+                store: store,
+                friendStore: friendStore,
+                onTicketSent: {
+                    selectedStatus = .sent
+                }
+            )
                 .onAppear {
                     onDetailVisibilityChange(true)
                 }
                 .onDisappear {
                     onDetailVisibilityChange(false)
                 }
+        }
+        .refreshable {
+            store.reload()
+            await store.reloadRemoteTickets()
+        }
+        .task {
+            await store.reloadRemoteTickets()
+        }
+        .overlay(alignment: .bottom) {
+            if let message = store.sendMessage {
+                Text(message)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .background(AppColors.primaryDark)
+                    .clipShape(Capsule())
+                    .padding(.bottom, 92)
+                    .transition(.opacity)
+                    .task(id: message) {
+                        try? await Task.sleep(for: .seconds(2))
+                        store.clearSendMessage()
+                    }
+            }
+        }
+        .alert(
+            "チケットを送信できませんでした",
+            isPresented: Binding(
+                get: { store.sendError != nil },
+                set: { if !$0 { store.clearSendError() } }
+            ),
+            presenting: store.sendError
+        ) { _ in
+            Button("OK") { store.clearSendError() }
+        } message: { error in
+            Text(error.localizedDescription)
         }
     }
 
@@ -59,6 +117,44 @@ struct TicketListView: View {
     NavigationStack {
         TicketListView(
             store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {}
+        )
+    }
+}
+
+#Preview("送った") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .sent
+        )
+    }
+}
+
+#Preview("受け取った") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(tickets: MockTicketListItems.items),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .received
+        )
+    }
+}
+
+#Preview("送信エラー") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                repository: InMemoryTicketRepository(
+                    tickets: MockTicketListItems.items.map(Ticket.init(item:))
+                ),
+                sendError: .ticketReceiverNotFriend
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {}
         )
     }

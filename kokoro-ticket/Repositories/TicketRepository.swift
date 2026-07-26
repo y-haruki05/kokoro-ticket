@@ -3,6 +3,7 @@ import Foundation
 enum TicketRepositoryError: Error {
     case ticketNotFound
     case invalidTransition(expected: TicketStatus, actual: TicketStatus)
+    case remoteUnavailable
 }
 
 @MainActor
@@ -20,4 +21,11 @@ protocol TicketRepository {
     func receive(id: UUID, at receivedAt: Date) throws
     func requestUsage(id: UUID, at requestedAt: Date) throws
     func complete(id: UUID, at completedAt: Date) throws
+    func sendTicket(
+        _ ticket: TicketListItem,
+        to friend: Friend,
+        at sentAt: Date
+    ) async throws -> TicketTransfer
+    func getSentTickets() async throws -> [TicketListItem]
+    func getReceivedTickets() async throws -> [TicketListItem]
 }
