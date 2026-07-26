@@ -47,6 +47,9 @@ struct kokoro_ticketApp: App {
                         modelContext: modelContainer.mainContext
                     ),
                     clientProvider: supabaseClientProvider
+                ),
+                realtimeService: SupabaseRealtimeService(
+                    clientProvider: supabaseClientProvider
                 )
             )
         }

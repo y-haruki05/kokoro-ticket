@@ -270,7 +270,8 @@ final class TicketStore {
         }
     }
 
-    func reloadRemoteTickets() async {
+    @discardableResult
+    func reloadRemoteTickets() async -> Bool {
         do {
             async let sent = repository.getSentTickets()
             async let received = repository.getReceivedTickets()
@@ -280,8 +281,10 @@ final class TicketStore {
             (sentTickets, receivedTickets, requestedTickets, waitingTickets, completedTickets) =
                 try await (sent, received, requested, waiting, completed)
             rebuildTickets()
+            return true
         } catch {
             sendError = normalizedSendError(error)
+            return false
         }
     }
 
@@ -308,6 +311,12 @@ final class TicketStore {
         } catch {
             completionError = normalizedCompletionError(error)
         }
+    }
+
+    @discardableResult
+    func reloadFromRealtime() async -> Bool {
+        reload()
+        return await reloadRemoteTickets()
     }
 
     func clearCompletionError() {

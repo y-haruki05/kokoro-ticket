@@ -47,6 +47,12 @@ enum AppError: Error, LocalizedError, Equatable {
     case ticketAlreadyCompleted
     case ticketUsageRequestNotFound
     case ticketCompletionFailed
+    case realtimeSubscriptionFailed
+    case realtimeConnectionFailed
+    case realtimeUnsubscribeFailed
+    case realtimeRefreshFailed
+    case realtimeSessionExpired
+    case realtimeNetworkDisconnected
     case network(description: String)
     case repository(description: String)
 
@@ -144,6 +150,18 @@ enum AppError: Error, LocalizedError, Equatable {
             "使用リクエストが見つかりません"
         case .ticketCompletionFailed:
             "チケットを完了できませんでした"
+        case .realtimeSubscriptionFailed:
+            "自動同期を開始できませんでした"
+        case .realtimeConnectionFailed:
+            "自動同期へ接続できませんでした"
+        case .realtimeUnsubscribeFailed:
+            "自動同期を停止できませんでした"
+        case .realtimeRefreshFailed:
+            "最新データを取得できませんでした"
+        case .realtimeSessionExpired:
+            "セッションの有効期限が切れました"
+        case .realtimeNetworkDisconnected:
+            "ネットワーク切断のため自動同期を一時停止しました"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):
