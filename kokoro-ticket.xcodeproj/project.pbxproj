@@ -6,7 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A12700000000000000000001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A12700000000000000000003 /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		A12700000000000000000004 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		A12700000000000000000005 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		A12700000000000000000006 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		F990FEF33014F43200D00F9F /* kokoro-ticket.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "kokoro-ticket.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -23,6 +30,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12700000000000000000001 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,9 +40,20 @@
 		F990FEEA3014F43200D00F9F = {
 			isa = PBXGroup;
 			children = (
+				A12700000000000000000007 /* Configuration */,
 				F990FEF53014F43200D00F9F /* kokoro-ticket */,
 				F990FEF43014F43200D00F9F /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		A12700000000000000000007 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				A12700000000000000000004 /* Debug.xcconfig */,
+				A12700000000000000000005 /* Release.xcconfig */,
+				A12700000000000000000006 /* Shared.xcconfig */,
+			);
+			path = Configuration;
 			sourceTree = "<group>";
 		};
 		F990FEF43014F43200D00F9F /* Products */ = {
@@ -65,6 +84,7 @@
 			);
 			name = "kokoro-ticket";
 			packageProductDependencies = (
+				A12700000000000000000003 /* Supabase */,
 			);
 			productName = "kokoro-ticket";
 			productReference = F990FEF33014F43200D00F9F /* kokoro-ticket.app */;
@@ -96,6 +116,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F990FEF43014F43200D00F9F /* Products */;
+			packageReferences = (
+				A12700000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -246,6 +269,7 @@
 		};
 		F990FF023014F43400D00F9F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A12700000000000000000004 /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -275,6 +299,7 @@
 		};
 		F990FF033014F43400D00F9F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A12700000000000000000005 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -324,6 +349,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A12700000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 2.49.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A12700000000000000000003 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A12700000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F990FEEB3014F43200D00F9F /* Project object */;
 }

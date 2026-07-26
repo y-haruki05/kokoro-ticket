@@ -11,8 +11,11 @@ import SwiftData
 @main
 struct kokoro_ticketApp: App {
     private let modelContainer: ModelContainer
+    private let supabaseClientProvider: any SupabaseClientProviding
 
     init() {
+        supabaseClientProvider = SupabaseClientProvider.shared
+
         do {
             modelContainer = try SwiftDataContainerFactory.makeContainer()
         } catch {
