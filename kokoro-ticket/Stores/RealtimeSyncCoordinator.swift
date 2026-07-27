@@ -16,6 +16,8 @@ final class RealtimeSyncCoordinator {
     @ObservationIgnored
     private let ticketStore: TicketStore
     @ObservationIgnored
+    private let notificationStore: NotificationStore
+    @ObservationIgnored
     private var subscribedUserID: UUID?
     @ObservationIgnored
     private var retryTask: Task<Void, Never>?
@@ -23,15 +25,19 @@ final class RealtimeSyncCoordinator {
     private var friendRefreshTask: Task<Void, Never>?
     @ObservationIgnored
     private var ticketRefreshTask: Task<Void, Never>?
+    @ObservationIgnored
+    private var notificationRefreshTask: Task<Void, Never>?
 
     init(
         service: any RealtimeService,
         friendStore: FriendStore,
-        ticketStore: TicketStore
+        ticketStore: TicketStore,
+        notificationStore: NotificationStore
     ) {
         self.service = service
         self.friendStore = friendStore
         self.ticketStore = ticketStore
+        self.notificationStore = notificationStore
     }
 
     func start(userID: UUID) async {
@@ -50,6 +56,7 @@ final class RealtimeSyncCoordinator {
         retryTask = nil
         friendRefreshTask?.cancel()
         ticketRefreshTask?.cancel()
+        notificationRefreshTask?.cancel()
         await service.stop()
         isConnected = false
         isConnecting = false
@@ -63,7 +70,8 @@ final class RealtimeSyncCoordinator {
     func refreshAll() async {
         let friendsSucceeded = await friendStore.reloadFromRealtime()
         let ticketsSucceeded = await ticketStore.reloadFromRealtime()
-        if !friendsSucceeded || !ticketsSucceeded {
+        let notificationsSucceeded = await notificationStore.reloadFromRealtime()
+        if !friendsSucceeded || !ticketsSucceeded || !notificationsSucceeded {
             connectionError = .realtimeRefreshFailed
         }
     }
@@ -128,6 +136,15 @@ final class RealtimeSyncCoordinator {
                 try? await Task.sleep(for: .milliseconds(180))
                 guard !Task.isCancelled, let self else { return }
                 if !(await ticketStore.reloadFromRealtime()) {
+                    connectionError = .realtimeRefreshFailed
+                }
+            }
+        case .notifications:
+            notificationRefreshTask?.cancel()
+            notificationRefreshTask = Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(180))
+                guard !Task.isCancelled, let self else { return }
+                if !(await notificationStore.reloadFromRealtime()) {
                     connectionError = .realtimeRefreshFailed
                 }
             }

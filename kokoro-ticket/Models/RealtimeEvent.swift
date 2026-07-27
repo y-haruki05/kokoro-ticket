@@ -3,6 +3,7 @@ import Foundation
 enum RealtimeDataArea: Sendable, Equatable {
     case friends
     case tickets
+    case notifications
 }
 
 struct RealtimeEvent: Sendable, Equatable {
