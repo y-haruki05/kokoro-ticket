@@ -2,11 +2,17 @@ import SwiftUI
 
 struct HomeView: View {
     private let tickets = MockTickets.received
+    let notificationStore: NotificationStore
+    var onOpenNotification: (AppNotification) -> Void = { _ in }
+    @State private var showsNotifications = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                HomeHeaderView()
+                HomeHeaderView(
+                    unreadCount: notificationStore.unreadCount,
+                    onNotificationTap: { showsNotifications = true }
+                )
 
                 VStack(alignment: .leading, spacing: 7) {
                     Text("おはよう！")
@@ -34,6 +40,12 @@ struct HomeView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $showsNotifications) {
+            NotificationListView(
+                store: notificationStore,
+                onOpen: onOpenNotification
+            )
+        }
     }
 
     private var receivedTicketsSection: some View {
@@ -65,6 +77,14 @@ struct HomeView: View {
 
 #Preview {
     NavigationStack {
-        HomeView()
+        HomeView(
+            notificationStore: NotificationStore(
+                repository: InMemoryNotificationRepository(
+                    notifications: NotificationPreviewData.allTypes
+                ),
+                notifications: NotificationPreviewData.allTypes,
+                unreadCount: 3
+            )
+        )
     }
 }

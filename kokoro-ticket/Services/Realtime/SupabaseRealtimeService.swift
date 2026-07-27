@@ -50,6 +50,16 @@ final class SupabaseRealtimeService: RealtimeService {
             channel.postgresChange(
                 AnyAction.self,
                 schema: "public",
+                table: "notifications",
+                filter: .eq("recipient_id", value: userValue)
+            ),
+            event: RealtimeEvent(area: .notifications, table: "notifications"),
+            onEvent: onEvent
+        )
+        listen(
+            channel.postgresChange(
+                AnyAction.self,
+                schema: "public",
                 table: "friend_requests",
                 filter: .eq("receiver_id", value: userValue)
             ),

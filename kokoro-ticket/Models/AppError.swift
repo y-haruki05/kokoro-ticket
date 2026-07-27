@@ -53,6 +53,12 @@ enum AppError: Error, LocalizedError, Equatable {
     case realtimeRefreshFailed
     case realtimeSessionExpired
     case realtimeNetworkDisconnected
+    case notificationFetchFailed
+    case notificationUnreadCountFailed
+    case notificationReadFailed
+    case notificationPageFailed
+    case notificationTargetUnavailable
+    case notificationPermissionDenied
     case network(description: String)
     case repository(description: String)
 
@@ -162,6 +168,18 @@ enum AppError: Error, LocalizedError, Equatable {
             "セッションの有効期限が切れました"
         case .realtimeNetworkDisconnected:
             "ネットワーク切断のため自動同期を一時停止しました"
+        case .notificationFetchFailed:
+            "通知を取得できませんでした"
+        case .notificationUnreadCountFailed:
+            "未読件数を取得できませんでした"
+        case .notificationReadFailed:
+            "通知を既読にできませんでした"
+        case .notificationPageFailed:
+            "次の通知を取得できませんでした"
+        case .notificationTargetUnavailable:
+            "対象の情報を表示できません"
+        case .notificationPermissionDenied:
+            "この通知を操作する権限がありません"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):

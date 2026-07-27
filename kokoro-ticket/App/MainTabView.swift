@@ -5,8 +5,10 @@ struct MainTabView: View {
     @State private var selection: AppTab = .home
     @State private var ticketStore: TicketStore
     @State private var friendStore: FriendStore
+    @State private var notificationStore: NotificationStore
     @State private var realtimeCoordinator: RealtimeSyncCoordinator
     @State private var isShowingTicketDetail = false
+    @State private var notificationTicketStatus: TicketStatus = .draft
     private let profileStore: ProfileStore
     private let currentUserID: UUID?
     private let currentUserEmail: String?
@@ -17,6 +19,7 @@ struct MainTabView: View {
     init(
         repository: any TicketRepository,
         friendRepository: any FriendRepository,
+        notificationRepository: any NotificationRepository,
         profileStore: ProfileStore,
         currentUserID: UUID? = nil,
         currentUserEmail: String? = nil,
@@ -26,17 +29,20 @@ struct MainTabView: View {
     ) {
         let ticketStore = TicketStore(repository: repository)
         let friendStore = FriendStore(repository: friendRepository)
+        let notificationStore = NotificationStore(repository: notificationRepository)
         _ticketStore = State(
             initialValue: ticketStore
         )
         _friendStore = State(
             initialValue: friendStore
         )
+        _notificationStore = State(initialValue: notificationStore)
         _realtimeCoordinator = State(
             initialValue: RealtimeSyncCoordinator(
                 service: realtimeService ?? InMemoryRealtimeService(),
                 friendStore: friendStore,
-                ticketStore: ticketStore
+                ticketStore: ticketStore,
+                notificationStore: notificationStore
             )
         )
         self.profileStore = profileStore
@@ -50,7 +56,10 @@ struct MainTabView: View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selection) {
                 NavigationStack {
-                    HomeView()
+                    HomeView(
+                        notificationStore: notificationStore,
+                        onOpenNotification: openNotification
+                    )
                 }
                 .tag(AppTab.home)
 
@@ -67,8 +76,10 @@ struct MainTabView: View {
                         onTicketCompleted: {
                             isShowingTicketDetail = false
                             selection = .memories
-                        }
+                        },
+                        initialStatus: notificationTicketStatus
                     )
+                    .id(notificationTicketStatus)
                 }
                     .tag(AppTab.tickets)
 
@@ -114,6 +125,7 @@ struct MainTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .task {
             await ticketStore.reloadRemoteTickets()
+            await notificationStore.reload()
         }
         .task(id: currentUserID) {
             guard let currentUserID else { return }
@@ -164,6 +176,24 @@ struct MainTabView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 8)
             }
+        }
+    }
+
+    private func openNotification(_ notification: AppNotification) {
+        switch notification.type {
+        case .friendRequestReceived, .friendRequestAccepted:
+            selection = .profile
+        case .ticketReceived:
+            notificationTicketStatus = .received
+            selection = .tickets
+        case .ticketAcknowledged:
+            notificationTicketStatus = .sent
+            selection = .tickets
+        case .ticketUsageRequested:
+            notificationTicketStatus = .requested
+            selection = .tickets
+        case .ticketCompleted:
+            selection = .memories
         }
     }
 
@@ -261,6 +291,7 @@ private struct AppTabBar: View {
             tickets: MockTicketListItems.items.map(Ticket.init(item:))
         ),
         friendRepository: InMemoryFriendRepository(),
+        notificationRepository: InMemoryNotificationRepository(),
         profileStore: ProfileStore(
             repository: InMemoryProfileRepository(profile: profile),
             profile: profile,
@@ -275,6 +306,7 @@ private struct AppTabBar: View {
     MainTabView(
         repository: InMemoryTicketRepository(),
         friendRepository: InMemoryFriendRepository(),
+        notificationRepository: InMemoryNotificationRepository(),
         profileStore: ProfileStore(
             repository: InMemoryProfileRepository(profile: profile),
             profile: profile,
@@ -296,6 +328,9 @@ private struct AppTabBar: View {
             tickets: MockTicketListItems.items.map(Ticket.init(item:))
         ),
         friendRepository: InMemoryFriendRepository(),
+        notificationRepository: InMemoryNotificationRepository(
+            notifications: NotificationPreviewData.allTypes
+        ),
         profileStore: ProfileStore(
             repository: InMemoryProfileRepository(profile: profile),
             profile: profile,
@@ -310,5 +345,6 @@ private struct AppTabBar: View {
         realtime.emit(RealtimeEvent(area: .tickets, table: "ticket_usage_requests"))
         realtime.emit(RealtimeEvent(area: .friends, table: "friend_requests"))
         realtime.emit(RealtimeEvent(area: .friends, table: "friendships"))
+        realtime.emit(RealtimeEvent(area: .notifications, table: "notifications"))
     }
 }

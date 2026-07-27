@@ -4,6 +4,7 @@ import SwiftUI
 struct AuthenticationRootView: View {
     private let ticketRepository: any TicketRepository
     private let friendRepository: any FriendRepository
+    private let notificationRepository: any NotificationRepository
     private let realtimeService: any RealtimeService
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
@@ -14,11 +15,13 @@ struct AuthenticationRootView: View {
         authRepository: any AuthRepository,
         profileRepository: any ProfileRepository,
         friendRepository: any FriendRepository,
+        notificationRepository: (any NotificationRepository)? = nil,
         ticketRepository: any TicketRepository,
         realtimeService: (any RealtimeService)? = nil
     ) {
         self.ticketRepository = ticketRepository
         self.friendRepository = friendRepository
+        self.notificationRepository = notificationRepository ?? InMemoryNotificationRepository()
         self.realtimeService = realtimeService ?? InMemoryRealtimeService()
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
@@ -43,6 +46,7 @@ struct AuthenticationRootView: View {
                 MainTabView(
                     repository: ticketRepository,
                     friendRepository: friendRepository,
+                    notificationRepository: notificationRepository,
                     profileStore: profileStore,
                     currentUserID: sessionStore.currentUser?.id,
                     currentUserEmail: sessionStore.currentUser?.email,
