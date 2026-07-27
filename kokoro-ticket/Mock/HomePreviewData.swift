@@ -45,8 +45,12 @@ enum HomePreviewData {
         let date = Calendar.current.date(byAdding: .day, value: -index, to: .now) ?? .now
         return TicketListItem(
             illustration: nil,
-            title: "こころチケット \(index + 1)",
-            message: "いつもありがとう",
+            title: ["肩たたき券", "ぎゅー券", "だいすき券"][index % 3],
+            message: [
+                "疲れた時に使ってね。心を込めて肩をたたきます！",
+                "寂しい時や元気が欲しい時に使ってね。ぎゅっと抱きしめます！",
+                "使ってくれたら、あなたの好きなところを10個伝えます！"
+            ][index % 3],
             senderName: "フレンド\(index + 1)",
             receiverName: "山本",
             createdAt: date,

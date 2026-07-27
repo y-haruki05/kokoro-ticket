@@ -6,12 +6,19 @@ struct TicketBackgroundColorOptionView: View {
 
     var body: some View {
         VStack(spacing: 9) {
-            RoundedRectangle(cornerRadius: 12)
+            Circle()
                 .fill(option.color)
-                .frame(height: 44)
+                .frame(width: 54, height: 54)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12)
+                    Circle()
                         .stroke(AppColors.border.opacity(0.8), lineWidth: 1)
+                }
+                .overlay {
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(AppColors.primaryDark)
+                    }
                 }
 
             Text(option.displayName)
@@ -22,19 +29,8 @@ struct TicketBackgroundColorOptionView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .padding(10)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .background(
-            isSelected ? AppColors.primarySoft : AppColors.cardBackground
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(
-                    isSelected ? AppColors.primary : AppColors.border,
-                    lineWidth: isSelected ? 2.5 : 1
-                )
-        }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

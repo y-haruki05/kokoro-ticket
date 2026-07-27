@@ -12,7 +12,7 @@ enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .draft: "作り置き"
+        case .draft: "保存済み"
         case .sent: "送った"
         case .received: "受け取った"
         case .requested: "リクエスト中"

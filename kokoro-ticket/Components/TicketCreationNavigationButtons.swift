@@ -4,6 +4,7 @@ struct TicketCreationNavigationButtons: View {
     var primaryTitle = "次へ"
     let onBack: () -> Void
     let onNext: () -> Void
+    var isPrimaryDisabled = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -24,11 +25,14 @@ struct TicketCreationNavigationButtons: View {
                 buttonLabel(
                     primaryTitle,
                     foregroundColor: .white,
-                    backgroundColor: AppColors.primary
+                    backgroundColor: isPrimaryDisabled
+                        ? AppColors.textSecondary.opacity(0.35)
+                        : AppColors.primary
                 )
                 .shadow(color: AppColors.shadow, radius: 8, y: 4)
             }
             .buttonStyle(.plain)
+            .disabled(isPrimaryDisabled)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -42,7 +46,7 @@ struct TicketCreationNavigationButtons: View {
         backgroundColor: Color
     ) -> some View {
         Text(title)
-            .font(.system(size: 17, weight: .bold, design: .rounded))
+            .font(.system(.headline, design: .rounded, weight: .bold))
             .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)
             .frame(height: 56)

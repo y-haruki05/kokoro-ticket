@@ -4,10 +4,10 @@ struct TicketCreationStepIndicatorView: View {
     let activeStep: Int
 
     private let steps = [
+        "内容",
         "イラスト",
-        "内容入力",
-        "デザイン",
-        "確認"
+        "背景・枠",
+        "プレビュー"
     ]
 
     var body: some View {
@@ -24,21 +24,21 @@ struct TicketCreationStepIndicatorView: View {
     private func stepView(number: Int, title: String) -> some View {
         let isActive = number == activeStep
 
-        return VStack(spacing: 7) {
+        return VStack(spacing: 6) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(isActive ? Color.white : AppColors.textSecondary)
-                .frame(width: 30, height: 30)
+                .frame(width: 28, height: 28)
                 .background(isActive ? AppColors.primary : AppColors.primarySoft)
                 .clipShape(Circle())
 
             Text(title)
-                .font(.system(size: 11, weight: isActive ? .bold : .medium))
+                .font(.system(.caption2, design: .rounded, weight: isActive ? .bold : .medium))
                 .foregroundStyle(
                     isActive ? AppColors.primaryDark : AppColors.textSecondary
                 )
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(

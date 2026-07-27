@@ -26,6 +26,13 @@ struct TicketBorderStyleOptionView: View {
                     lineWidth: isSelected ? 2.5 : 1
                 )
         }
+        .shadow(
+            color: isSelected ? AppColors.shadow : .clear,
+            radius: 10,
+            y: isSelected ? 5 : 0
+        )
+        .offset(y: isSelected ? -2 : 0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.82), value: isSelected)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

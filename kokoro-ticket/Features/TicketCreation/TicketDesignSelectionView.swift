@@ -12,18 +12,18 @@ struct TicketDesignSelectionView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 24) {
                 TicketCreationHeaderView(onBack: onBack)
 
                 TicketCreationStepIndicatorView(activeStep: 3)
 
                 VStack(alignment: .leading, spacing: 24) {
-                    Text("デザインを選ぼう")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("チケットを彩ろう")
+                        .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(AppColors.textPrimary)
 
                     optionSection(title: "背景色") {
-                        LazyVGrid(columns: columns, spacing: 12) {
+                        HStack(spacing: 8) {
                             ForEach(TicketBackgroundColor.allCases) { option in
                                 Button {
                                     draft.selectedBackgroundColor = option
@@ -83,7 +83,7 @@ struct TicketDesignSelectionView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(.headline, design: .rounded, weight: .bold))
                 .foregroundStyle(AppColors.textPrimary)
 
             content()

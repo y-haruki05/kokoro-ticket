@@ -5,19 +5,15 @@ struct TicketDetailCardView: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            IllustrationPlaceholderView()
-                .frame(width: 150, height: 112)
-
-            VStack(spacing: 7) {
-                Text(ticket.title.valueOrFallback("こころチケット"))
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.primaryDark)
-
-                Text(ticket.message.valueOrFallback("ありがとうの気持ちをこめて"))
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
+            TicketVisualView(
+                title: ticket.title,
+                message: ticket.message,
+                illustration: ticket.illustration,
+                design: ticket.design,
+                senderName: ticket.senderName,
+                date: ticket.sentAt ?? ticket.createdAt,
+                size: .large
+            )
 
             Divider()
                 .overlay(AppColors.border.opacity(0.7))
@@ -94,14 +90,12 @@ struct TicketDetailCardView: View {
                 )
             }
         }
-        .padding(22)
-        .background(ticket.design.backgroundColor.color)
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .padding(18)
+        .background(AppColors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .overlay {
-            TicketBorderShape(
-                style: ticket.design.borderStyle,
-                color: AppColors.primary
-            )
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(AppColors.border, lineWidth: 1)
         }
         .shadow(color: AppColors.shadow, radius: 14, y: 7)
         .accessibilityElement(children: .combine)

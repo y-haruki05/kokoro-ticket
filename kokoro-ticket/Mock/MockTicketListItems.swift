@@ -5,7 +5,7 @@ enum MockTicketListItems {
         makeTicket(
             id: "00000000-0000-0000-0000-000000000001",
             title: "おてつだい券",
-            message: "今日はぼくにまかせてね",
+            message: "忙しい日に使ってね。お部屋のお片づけを手伝います！",
             receiverName: nil,
             status: .draft,
             daysAgo: 0
@@ -13,7 +13,7 @@ enum MockTicketListItems {
         makeTicket(
             id: "00000000-0000-0000-0000-000000000002",
             title: "だいすき券",
-            message: "いつもありがとう",
+            message: "使ってくれたら、あなたの好きなところを10個伝えます！",
             receiverName: "おかあさん",
             status: .sent,
             daysAgo: 1
@@ -21,7 +21,7 @@ enum MockTicketListItems {
         makeTicket(
             id: "00000000-0000-0000-0000-000000000003",
             title: "肩たたき券",
-            message: "ゆっくり休んでね",
+            message: "疲れた時に使ってね。心を込めて肩をたたきます！",
             receiverName: "おとうさん",
             status: .received,
             daysAgo: 2
@@ -29,7 +29,7 @@ enum MockTicketListItems {
         makeTicket(
             id: "00000000-0000-0000-0000-000000000004",
             title: "ぎゅー券",
-            message: "だいすきの気持ちをこめて",
+            message: "寂しい時や元気が欲しい時に使ってね。ぎゅっと抱きしめます！",
             receiverName: "おかあさん",
             status: .requested,
             daysAgo: 4
@@ -37,7 +37,7 @@ enum MockTicketListItems {
         makeTicket(
             id: "00000000-0000-0000-0000-000000000005",
             title: "おつかれさま券",
-            message: "いつもありがとう！",
+            message: "頑張った日に使ってね。好きなお菓子と飲み物を用意します！",
             receiverName: "おかあさん",
             status: .completed,
             daysAgo: 8

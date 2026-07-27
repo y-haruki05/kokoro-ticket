@@ -5,9 +5,15 @@ struct TicketCreationHeaderView: View {
 
     var body: some View {
         ZStack {
-            Text("チケット作成")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
+            VStack(spacing: 4) {
+                Text("チケットを作る")
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .foregroundStyle(AppColors.primaryDark)
+
+                Text("大切な人へ気持ちを届けよう")
+                    .font(.system(.caption, design: .rounded, weight: .medium))
+                    .foregroundStyle(AppColors.textSecondary)
+            }
 
             HStack {
                 Button(action: onBack) {
