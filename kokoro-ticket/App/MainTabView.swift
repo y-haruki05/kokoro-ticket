@@ -61,9 +61,21 @@ struct MainTabView: View {
             TabView(selection: $selection) {
                 NavigationStack {
                     HomeView(
+                        ticketStore: ticketStore,
                         notificationStore: notificationStore,
+                        displayName: profileStore.profile?.displayName ?? "",
                         isResolvingDeepLink: appRouter.isResolvingDeepLink,
-                        onOpenNotification: openNotification
+                        onOpenNotification: openNotification,
+                        onOpenTickets: { status in
+                            notificationTicketStatus = status
+                            selection = .tickets
+                        },
+                        onCreateTicket: {
+                            selection = .create
+                        },
+                        onDetailVisibilityChange: { isShowing in
+                            isShowingTicketDetail = isShowing
+                        }
                     )
                 }
                 .tag(AppTab.home)
@@ -129,10 +141,6 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .task {
-            await ticketStore.reloadRemoteTickets()
-            await notificationStore.reload()
-        }
         .task(id: currentUserID) {
             guard let currentUserID else { return }
             await realtimeCoordinator.start(userID: currentUserID)

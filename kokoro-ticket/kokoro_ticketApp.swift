@@ -32,7 +32,26 @@ struct kokoro_ticketApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AuthenticationRootView(
+            rootView
+        }
+        .modelContainer(modelContainer)
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+        #if DEBUG
+        if CommandLine.arguments.contains("-home-preview") {
+            HomeVerificationRootView()
+        } else {
+            authenticationRoot
+        }
+        #else
+        authenticationRoot
+        #endif
+    }
+
+    private var authenticationRoot: some View {
+        AuthenticationRootView(
                 authRepository: SupabaseAuthRepository(
                     clientProvider: supabaseClientProvider
                 ),
@@ -55,7 +74,5 @@ struct kokoro_ticketApp: App {
                     clientProvider: supabaseClientProvider
                 )
             )
-        }
-        .modelContainer(modelContainer)
     }
 }

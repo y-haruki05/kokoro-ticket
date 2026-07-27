@@ -10,6 +10,7 @@ final class TicketStore {
     private(set) var requestedTickets: [TicketListItem] = []
     private(set) var waitingTickets: [TicketListItem] = []
     private(set) var completedTickets: [TicketListItem] = []
+    private(set) var isReloadingRemote = false
     private(set) var isSending = false
     private(set) var isRequesting = false
     private(set) var sendError: AppError?
@@ -85,6 +86,19 @@ final class TicketStore {
             completionError: completionError
         )
         localTickets = previewTickets
+        sentTickets = previewTickets.filter {
+            $0.perspective != .receiver && $0.status != .draft && $0.status != .completed
+        }
+        receivedTickets = previewTickets.filter {
+            $0.perspective == .receiver && $0.status != .completed
+        }
+        requestedTickets = previewTickets.filter {
+            $0.perspective == .receiver && $0.status == .requested
+        }
+        waitingTickets = previewTickets.filter {
+            $0.perspective != .receiver && $0.status == .requested
+        }
+        completedTickets = previewTickets.filter { $0.status == .completed }
         rebuildTickets()
     }
 
@@ -272,6 +286,10 @@ final class TicketStore {
 
     @discardableResult
     func reloadRemoteTickets() async -> Bool {
+        guard !isReloadingRemote else { return true }
+        isReloadingRemote = true
+        defer { isReloadingRemote = false }
+
         do {
             async let sent = repository.getSentTickets()
             async let received = repository.getReceivedTickets()
@@ -281,9 +299,11 @@ final class TicketStore {
             (sentTickets, receivedTickets, requestedTickets, waitingTickets, completedTickets) =
                 try await (sent, received, requested, waiting, completed)
             rebuildTickets()
+            lastErrorMessage = nil
             return true
         } catch {
             sendError = normalizedSendError(error)
+            lastErrorMessage = "チケットの読み込みに失敗しました"
             return false
         }
     }
