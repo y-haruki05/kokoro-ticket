@@ -7,6 +7,7 @@ struct ProfileView: View {
     let email: String?
     let isAuthLoading: Bool
     let onLogout: () -> Void
+    @Binding private var deepLink: AppDeepLink?
 
     private let clipboard: any ClipboardWriting
 
@@ -19,6 +20,7 @@ struct ProfileView: View {
         email: String?,
         isAuthLoading: Bool,
         clipboard: any ClipboardWriting,
+        deepLink: Binding<AppDeepLink?> = .constant(nil),
         onLogout: @escaping () -> Void
     ) {
         self.store = store
@@ -26,6 +28,7 @@ struct ProfileView: View {
         self.email = email
         self.isAuthLoading = isAuthLoading
         self.clipboard = clipboard
+        _deepLink = deepLink
         self.onLogout = onLogout
     }
 
@@ -94,6 +97,24 @@ struct ProfileView: View {
                         .padding(.bottom, 94)
                         .transition(.opacity)
                 }
+            }
+        }
+        .navigationDestination(
+            isPresented: Binding(
+                get: { deepLink != nil },
+                set: { if !$0 { deepLink = nil } }
+            )
+        ) {
+            switch deepLink {
+            case let .incomingFriendRequest(id):
+                FriendRequestDetailView(requestID: id, store: friendStore)
+            case let .friend(id):
+                FriendDetailView(friendID: id, store: friendStore)
+            default:
+                ContentUnavailableView(
+                    "対象の情報を表示できません",
+                    systemImage: "exclamationmark.triangle"
+                )
             }
         }
         .profileErrorAlert(store: store)

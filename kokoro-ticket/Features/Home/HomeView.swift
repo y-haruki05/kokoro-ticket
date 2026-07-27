@@ -3,7 +3,8 @@ import SwiftUI
 struct HomeView: View {
     private let tickets = MockTickets.received
     let notificationStore: NotificationStore
-    var onOpenNotification: (AppNotification) -> Void = { _ in }
+    var isResolvingDeepLink = false
+    var onOpenNotification: (AppNotification) async -> Void = { _ in }
     @State private var showsNotifications = false
 
     var body: some View {
@@ -43,6 +44,7 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showsNotifications) {
             NotificationListView(
                 store: notificationStore,
+                isResolvingDeepLink: isResolvingDeepLink,
                 onOpen: onOpenNotification
             )
         }
