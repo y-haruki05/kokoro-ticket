@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct kokoro_ticketApp: App {
+    @UIApplicationDelegateAdaptor(PushNotificationDelegate.self) private var appDelegate
     private let modelContainer: ModelContainer
     private let supabaseClientProvider: any SupabaseClientProviding
 
@@ -43,6 +44,9 @@ struct kokoro_ticketApp: App {
                     clientProvider: supabaseClientProvider
                 ),
                 notificationRepository: SupabaseNotificationRepository(
+                    clientProvider: supabaseClientProvider
+                ),
+                deviceTokenRepository: SupabaseDeviceTokenRepository(
                     clientProvider: supabaseClientProvider
                 ),
                 ticketRepository: SupabaseTicketRepository(

@@ -6,6 +6,7 @@ struct AuthenticationRootView: View {
     private let friendRepository: any FriendRepository
     private let notificationRepository: any NotificationRepository
     private let realtimeService: any RealtimeService
+    private let pushStore: PushNotificationStore
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
@@ -16,6 +17,7 @@ struct AuthenticationRootView: View {
         profileRepository: any ProfileRepository,
         friendRepository: any FriendRepository,
         notificationRepository: (any NotificationRepository)? = nil,
+        deviceTokenRepository: (any DeviceTokenRepository)? = nil,
         ticketRepository: any TicketRepository,
         realtimeService: (any RealtimeService)? = nil
     ) {
@@ -23,6 +25,10 @@ struct AuthenticationRootView: View {
         self.friendRepository = friendRepository
         self.notificationRepository = notificationRepository ?? InMemoryNotificationRepository()
         self.realtimeService = realtimeService ?? InMemoryRealtimeService()
+        pushStore = PushNotificationStore(
+            repository: deviceTokenRepository ?? InMemoryDeviceTokenRepository(),
+            environment: _isDebugAssertConfiguration() ? "sandbox" : "production"
+        )
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
         )
@@ -52,8 +58,10 @@ struct AuthenticationRootView: View {
                     currentUserEmail: sessionStore.currentUser?.email,
                     isAuthLoading: sessionStore.isLoading,
                     realtimeService: realtimeService,
+                    pushStore: pushStore,
                     onLogout: {
                         Task {
+                            await pushStore.deactivateForLogout()
                             await sessionStore.signOut()
                         }
                     }

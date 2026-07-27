@@ -18,6 +18,8 @@ struct MainTabView: View {
     private let currentUserEmail: String?
     private let isAuthLoading: Bool
     private let onLogout: () -> Void
+    private let pushStore: PushNotificationStore
+    @State private var showsPushExplanation = false
     @Environment(\.scenePhase) private var scenePhase
 
     init(
@@ -29,6 +31,7 @@ struct MainTabView: View {
         currentUserEmail: String? = nil,
         isAuthLoading: Bool = false,
         realtimeService: (any RealtimeService)? = nil,
+        pushStore: PushNotificationStore? = nil,
         onLogout: @escaping () -> Void = {}
     ) {
         let ticketStore = TicketStore(repository: repository)
@@ -54,6 +57,10 @@ struct MainTabView: View {
         self.currentUserEmail = currentUserEmail
         self.isAuthLoading = isAuthLoading
         self.onLogout = onLogout
+        self.pushStore = pushStore ?? PushNotificationStore(
+            repository: InMemoryDeviceTokenRepository(),
+            environment: "sandbox"
+        )
     }
 
     var body: some View {
@@ -132,6 +139,11 @@ struct MainTabView: View {
         .task {
             await ticketStore.reloadRemoteTickets()
             await notificationStore.reload()
+            await pushStore.refreshAuthorizationStatus()
+            showsPushExplanation = pushStore.authorizationStatus == .notDetermined
+            if let pending = pushStore.consumePendingDeepLink() {
+                await openNotification(pending.notification)
+            }
         }
         .task(id: currentUserID) {
             guard let currentUserID else { return }
@@ -203,6 +215,13 @@ struct MainTabView: View {
             }
         } message: {
             Text("情報が更新または削除された可能性があります。")
+        }
+        .sheet(isPresented: $showsPushExplanation) {
+            PushPermissionView(
+                store: pushStore,
+                onLater: { showsPushExplanation = false }
+            )
+            .presentationDetents([.medium])
         }
     }
 

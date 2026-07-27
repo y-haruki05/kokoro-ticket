@@ -63,6 +63,12 @@ enum AppError: Error, LocalizedError, Equatable {
     case deepLinkInvalidResource
     case deepLinkTargetUnavailable
     case deepLinkNavigationFailed
+    case pushAuthorizationDenied
+    case pushAuthorizationFailed
+    case apnsRegistrationFailed
+    case deviceTokenSaveFailed
+    case deviceTokenDeactivationFailed
+    case pushPayloadInvalid
     case network(description: String)
     case repository(description: String)
 
@@ -192,6 +198,18 @@ enum AppError: Error, LocalizedError, Equatable {
             "対象の情報を表示できません"
         case .deepLinkNavigationFailed:
             "対象画面を開けませんでした"
+        case .pushAuthorizationDenied:
+            "通知が許可されていません"
+        case .pushAuthorizationFailed:
+            "通知の許可を確認できませんでした"
+        case .apnsRegistrationFailed:
+            "Push通知を登録できませんでした"
+        case .deviceTokenSaveFailed:
+            "端末の通知情報を保存できませんでした"
+        case .deviceTokenDeactivationFailed:
+            "端末の通知情報を無効化できませんでした"
+        case .pushPayloadInvalid:
+            "Push通知の情報が正しくありません"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):
