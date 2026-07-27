@@ -6,36 +6,51 @@ struct TicketIllustrationSelectionView: View {
     var onNext: () -> Void = {}
 
     private let illustrations = MockTicketIllustrations.candidates
-    private let columns = [
-        GridItem(.flexible(), spacing: 14),
-        GridItem(.flexible(), spacing: 14)
-    ]
-
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 24) {
                 TicketCreationHeaderView(onBack: onBack)
 
-                TicketCreationStepIndicatorView(activeStep: 1)
+                TicketCreationStepIndicatorView(activeStep: 2)
 
-                VStack(alignment: .leading, spacing: 18) {
-                    Text("イラストを選ぼう")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("ここにゃんを選ぼう")
+                        .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(AppColors.textPrimary)
 
-                    LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(illustrations) { illustration in
-                            Button {
-                                draft.selectedIllustration = illustration
-                            } label: {
-                                IllustrationSelectionCard(
-                                    illustration: illustration,
-                                    isSelected: draft.selectedIllustration == illustration
-                                )
+                    Text("気持ちにぴったりな表情を選んでね")
+                        .font(.system(.subheadline, design: .rounded, weight: .medium))
+                        .foregroundStyle(AppColors.textSecondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 14) {
+                            ForEach(illustrations) { illustration in
+                                Button {
+                                    draft.selectedIllustration = illustration
+                                } label: {
+                                    IllustrationSelectionCard(
+                                        illustration: illustration,
+                                        isSelected: draft.selectedIllustration == illustration
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 10)
                     }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("プレビュー")
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    TicketDesignPreviewView(
+                        illustration: draft.selectedIllustration,
+                        content: draft.content,
+                        design: draft.design
+                    )
                 }
             }
             .padding(.horizontal, 20)
@@ -45,31 +60,12 @@ struct TicketIllustrationSelectionView: View {
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            nextButton
+            TicketCreationNavigationButtons(
+                onBack: onBack,
+                onNext: onNext,
+                isPrimaryDisabled: draft.selectedIllustration == nil
+            )
         }
-    }
-
-    private var nextButton: some View {
-        Button(action: onNext) {
-            Text("次へ")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(
-                    draft.selectedIllustration == nil
-                        ? AppColors.textSecondary.opacity(0.35)
-                        : AppColors.primary
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .contentShape(RoundedRectangle(cornerRadius: 18))
-        }
-        .buttonStyle(.plain)
-        .disabled(draft.selectedIllustration == nil)
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(.ultraThinMaterial)
     }
 }
 

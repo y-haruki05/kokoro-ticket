@@ -240,7 +240,7 @@ struct TicketDetailView: View {
 
     private var confirmationTitle: String {
         switch pendingAction {
-        case .delete: "この作り置きチケットを削除しますか？"
+        case .delete: "このチケットを削除しますか？"
         case .acknowledgeReceipt: "このチケットを受け取りますか？"
         case .requestUsage: "このチケットを使いますか？"
         case .complete: "チケットを完了しますか？"

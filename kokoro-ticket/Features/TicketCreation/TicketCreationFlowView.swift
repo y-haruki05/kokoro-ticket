@@ -9,17 +9,17 @@ struct TicketCreationFlowView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            TicketIllustrationSelectionView(
+            TicketContentInputView(
                 draft: draft,
                 onBack: onClose,
                 onNext: {
-                    path.append(.contentInput)
+                    path.append(.illustration)
                 }
             )
             .navigationDestination(for: TicketCreationRoute.self) { route in
                 switch route {
-                case .contentInput:
-                    TicketContentInputView(
+                case .illustration:
+                    TicketIllustrationSelectionView(
                         draft: draft,
                         onBack: navigateBack,
                         onNext: {
@@ -59,11 +59,11 @@ struct TicketCreationFlowView: View {
 }
 
 private enum TicketCreationRoute: Hashable {
-    case contentInput
+    case illustration
     case design
     case confirmation
 }
 
-#Preview {
+#Preview("通常") {
     TicketCreationFlowView(onClose: {})
 }

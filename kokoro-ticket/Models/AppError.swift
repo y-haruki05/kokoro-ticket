@@ -125,7 +125,7 @@ enum AppError: Error, LocalizedError, Equatable {
         case let .friend(description):
             description
         case .ticketNotDraft:
-            "作り置き状態のチケットだけ送信できます"
+            "送信前のチケットだけ送信できます"
         case .ticketNotOwned:
             "自分のチケットだけ送信できます"
         case .ticketReceiverNotFriend:

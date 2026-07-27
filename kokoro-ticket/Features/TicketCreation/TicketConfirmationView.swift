@@ -17,9 +17,13 @@ struct TicketConfirmationView: View {
                 TicketCreationStepIndicatorView(activeStep: 4)
 
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("完成したチケットを確認しよう")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("できあがり！")
+                        .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(AppColors.textPrimary)
+
+                    Text("大切な気持ちが届くように、最後に確認してみよう")
+                        .font(.system(.subheadline, design: .rounded, weight: .medium))
+                        .foregroundStyle(AppColors.textSecondary)
 
                     TicketConfirmationSummaryView(draft: draft)
                 }
@@ -32,21 +36,14 @@ struct TicketConfirmationView: View {
         .navigationBarHidden(true)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TicketCreationNavigationButtons(
-                primaryTitle: "保存",
+                primaryTitle: "保存する",
                 onBack: onBack,
                 onNext: saveTicket
             )
         }
         .overlay {
             if isShowingSaveConfirmation {
-                Text("作り置きチケットとして保存しました")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 15)
-                    .background(AppColors.primaryDark)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: AppColors.shadow, radius: 10, y: 5)
+                TicketCreationSaveSuccessView()
                     .transition(.opacity)
                     .accessibilityAddTraits(.isStaticText)
             }
@@ -69,6 +66,34 @@ struct TicketConfirmationView: View {
     }
 }
 
+struct TicketCreationSaveSuccessView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image("cat_happy")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 132, height: 104)
+
+            Text("チケットを保存しました！")
+                .font(.system(.headline, design: .rounded, weight: .bold))
+                .foregroundStyle(AppColors.primaryDark)
+
+            Text("あとからフレンドへ送れます")
+                .font(.system(.subheadline, design: .rounded, weight: .medium))
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(26)
+        .background(AppColors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 26))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26)
+                .stroke(AppColors.border, lineWidth: 1)
+        }
+        .shadow(color: AppColors.shadow, radius: 18, y: 8)
+        .padding()
+    }
+}
+
 #Preview {
     NavigationStack {
         TicketConfirmationView(
@@ -76,4 +101,10 @@ struct TicketConfirmationView: View {
             onBack: {}
         )
     }
+}
+
+#Preview("保存成功") {
+    TicketCreationSaveSuccessView()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppColors.background)
 }
