@@ -2,7 +2,8 @@ import SwiftUI
 
 struct NotificationListView: View {
     let store: NotificationStore
-    var onOpen: (AppNotification) -> Void = { _ in }
+    var isResolvingDeepLink = false
+    var onOpen: (AppNotification) async -> Void = { _ in }
 
     var body: some View {
         Group {
@@ -50,12 +51,13 @@ struct NotificationListView: View {
                     Button {
                         Task {
                             await store.markAsRead(notification)
-                            onOpen(notification)
+                            await onOpen(notification)
                         }
                     } label: {
                         NotificationRow(notification: notification)
                     }
                     .buttonStyle(.plain)
+                    .disabled(isResolvingDeepLink)
                     .task { await store.loadMoreIfNeeded(current: notification) }
                 }
                 if store.isLoadingMore {
@@ -64,6 +66,17 @@ struct NotificationListView: View {
             }
             .padding(20)
             .padding(.bottom, 80)
+        }
+        .overlay {
+            if isResolvingDeepLink {
+                ZStack {
+                    Color.black.opacity(0.08).ignoresSafeArea()
+                    ProgressView("読み込み中")
+                        .padding(20)
+                        .background(AppColors.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+            }
         }
     }
 
@@ -191,6 +204,21 @@ private struct NotificationRow: View {
                     error: .notificationFetchFailed
                 )
             )
+        )
+    }
+}
+
+#Preview("Deep Link取得中") {
+    NavigationStack {
+        NotificationListView(
+            store: NotificationStore(
+                repository: InMemoryNotificationRepository(
+                    notifications: NotificationPreviewData.allTypes
+                ),
+                notifications: NotificationPreviewData.allTypes,
+                unreadCount: 3
+            ),
+            isResolvingDeepLink: true
         )
     }
 }

@@ -7,6 +7,10 @@ struct MainTabView: View {
     @State private var friendStore: FriendStore
     @State private var notificationStore: NotificationStore
     @State private var realtimeCoordinator: RealtimeSyncCoordinator
+    @State private var appRouter = AppRouter()
+    @State private var ticketPath: [UUID] = []
+    @State private var memoriesPath: [UUID] = []
+    @State private var profileDeepLink: AppDeepLink?
     @State private var isShowingTicketDetail = false
     @State private var notificationTicketStatus: TicketStatus = .draft
     private let profileStore: ProfileStore
@@ -58,12 +62,13 @@ struct MainTabView: View {
                 NavigationStack {
                     HomeView(
                         notificationStore: notificationStore,
+                        isResolvingDeepLink: appRouter.isResolvingDeepLink,
                         onOpenNotification: openNotification
                     )
                 }
                 .tag(AppTab.home)
 
-                NavigationStack {
+                NavigationStack(path: $ticketPath) {
                     TicketListView(
                         store: ticketStore,
                         friendStore: friendStore,
@@ -93,7 +98,7 @@ struct MainTabView: View {
                 )
                     .tag(AppTab.create)
 
-                NavigationStack {
+                NavigationStack(path: $memoriesPath) {
                     MemoriesView(
                         store: ticketStore,
                         onCreateTicket: {
@@ -112,6 +117,7 @@ struct MainTabView: View {
                     email: currentUserEmail,
                     isAuthLoading: isAuthLoading,
                     clipboard: SystemClipboardService(),
+                    deepLink: $profileDeepLink,
                     onLogout: onLogout
                 )
                     .tag(AppTab.profile)
@@ -177,23 +183,62 @@ struct MainTabView: View {
                 .padding(.top, 8)
             }
         }
+        .alert(
+            "対象の情報を表示できません",
+            isPresented: Binding(
+                get: { appRouter.deepLinkError != nil },
+                set: { if !$0 { appRouter.clearError() } }
+            )
+        ) {
+            Button("閉じる") { appRouter.clearError() }
+            Button("該当一覧を見る") {
+                switch appRouter.fallbackTab {
+                case .tickets: selection = .tickets
+                case .memories: selection = .memories
+                case .profile: selection = .profile
+                case nil: break
+                }
+                appRouter.clearError()
+                appRouter.allowRetry()
+            }
+        } message: {
+            Text("情報が更新または削除された可能性があります。")
+        }
     }
 
-    private func openNotification(_ notification: AppNotification) {
-        switch notification.type {
-        case .friendRequestReceived, .friendRequestAccepted:
+    private func openNotification(_ notification: AppNotification) async {
+        guard let resolved = await appRouter.resolve(
+            notification: notification,
+            friendStore: friendStore,
+            ticketStore: ticketStore
+        ) else { return }
+
+        switch resolved.tab {
+        case .profile:
+            profileDeepLink = resolved.link
             selection = .profile
-        case .ticketReceived:
-            notificationTicketStatus = .received
+        case .tickets:
+            switch resolved.link {
+            case .receivedTicket: notificationTicketStatus = .received
+            case .sentTicket: notificationTicketStatus = .sent
+            case .waitingTicket: notificationTicketStatus = .requested
+            default: break
+            }
+            if case let .receivedTicket(id) = resolved.link { pushUnique(id, into: &ticketPath) }
+            if case let .sentTicket(id) = resolved.link { pushUnique(id, into: &ticketPath) }
+            if case let .waitingTicket(id) = resolved.link { pushUnique(id, into: &ticketPath) }
             selection = .tickets
-        case .ticketAcknowledged:
-            notificationTicketStatus = .sent
-            selection = .tickets
-        case .ticketUsageRequested:
-            notificationTicketStatus = .requested
-            selection = .tickets
-        case .ticketCompleted:
+        case .memories:
+            if case let .completedTicket(id) = resolved.link {
+                pushUnique(id, into: &memoriesPath)
+            }
             selection = .memories
+        }
+    }
+
+    private func pushUnique(_ id: UUID, into path: inout [UUID]) {
+        if path.last != id {
+            path.append(id)
         }
     }
 

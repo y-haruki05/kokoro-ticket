@@ -59,6 +59,10 @@ enum AppError: Error, LocalizedError, Equatable {
     case notificationPageFailed
     case notificationTargetUnavailable
     case notificationPermissionDenied
+    case deepLinkConversionFailed
+    case deepLinkInvalidResource
+    case deepLinkTargetUnavailable
+    case deepLinkNavigationFailed
     case network(description: String)
     case repository(description: String)
 
@@ -180,6 +184,14 @@ enum AppError: Error, LocalizedError, Equatable {
             "対象の情報を表示できません"
         case .notificationPermissionDenied:
             "この通知を操作する権限がありません"
+        case .deepLinkConversionFailed:
+            "通知の遷移情報を読み取れませんでした"
+        case .deepLinkInvalidResource:
+            "通知と対象情報が一致しません"
+        case .deepLinkTargetUnavailable:
+            "対象の情報を表示できません"
+        case .deepLinkNavigationFailed:
+            "対象画面を開けませんでした"
         case .network:
             "ネットワーク接続を確認してください"
         case let .repository(description):
