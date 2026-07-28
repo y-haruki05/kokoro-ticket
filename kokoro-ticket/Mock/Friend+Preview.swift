@@ -23,6 +23,20 @@ enum FriendPreviewData {
         avatarKey: nil,
         friendshipCreatedAt: .now
     )
+    static let friends = [
+        friend,
+        Friend(
+            id: UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!,
+            displayName: "はる",
+            friendCode: "H3JK7MNP",
+            avatarKey: nil,
+            friendshipCreatedAt: Calendar.current.date(
+                byAdding: .month,
+                value: -2,
+                to: .now
+            ) ?? .now
+        )
+    ]
     static let incomingRequest = FriendRequest(
         id: UUID(),
         senderID: otherUserID,

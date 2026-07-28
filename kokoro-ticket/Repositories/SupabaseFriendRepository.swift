@@ -4,6 +4,7 @@ import Supabase
 
 @MainActor
 final class SupabaseFriendRepository: FriendRepository {
+    private static let avatarBucket = "profile-avatars"
     private let client: Supabase.SupabaseClient
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "kokoro-ticket",
@@ -76,6 +77,16 @@ final class SupabaseFriendRepository: FriendRepository {
             return records.map(Friend.init(record:))
         } catch {
             throw map(error, action: "フレンド一覧の取得")
+        }
+    }
+
+    func fetchAvatarData(path: String) async throws -> Data {
+        do {
+            return try await client.storage
+                .from(Self.avatarBucket)
+                .download(path: path)
+        } catch {
+            throw map(error, action: "プロフィール画像の取得")
         }
     }
 

@@ -4,46 +4,74 @@ struct OutgoingFriendRequestsView: View {
     let store: FriendStore
 
     var body: some View {
-        Group {
+        ScrollView {
             if store.outgoingRequests.isEmpty {
-                ContentUnavailableView(
-                    "送信中の申請はありません",
-                    systemImage: "paperplane",
-                    description: Text("送った申請がここに表示されます")
+                FriendEmptyStateView(
+                    imageName: "cat_default",
+                    title: "送信中の申請はありません。",
+                    message: "フレンド申請を送ると、ここで確認できます。"
                 )
+                .padding(.horizontal, 20)
+                .padding(.top, 36)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 14) {
-                        ForEach(store.outgoingRequests) { request in
-                            VStack(spacing: 12) {
-                                FriendProfileRow(profile: request.receiverProfile)
-                                HStack {
-                                    Text(request.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                    Spacer()
-                                    Text("申請中")
-                                        .fontWeight(.bold)
-                                        .foregroundStyle(AppColors.primaryDark)
-                                }
-                                .font(.system(size: 12, design: .rounded))
-                                .foregroundStyle(AppColors.textSecondary)
-                            }
-                            .padding(16)
-                            .background(AppColors.cardBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .shadow(color: AppColors.shadow, radius: 8, y: 3)
-                        }
+                LazyVStack(spacing: 14) {
+                    ForEach(store.outgoingRequests) { request in
+                        requestCard(request)
                     }
-                    .padding(20)
                 }
+                .padding(20)
             }
         }
+        .refreshable { await store.reload() }
         .background(AppColors.background)
-        .navigationTitle("送信中の申請")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("送信中")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+        }
+        .toolbarBackground(AppColors.background, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .friendErrorAlert(store: store)
+    }
+
+    private func requestCard(_ request: FriendRequest) -> some View {
+        VStack(spacing: 12) {
+            FriendProfileRow(profile: request.receiverProfile, store: store)
+
+            HStack {
+                Label(
+                    request.createdAt.formatted(
+                        Date.FormatStyle(date: .abbreviated, time: .shortened)
+                            .locale(Locale(identifier: "ja_JP"))
+                    ),
+                    systemImage: "clock"
+                )
+
+                Spacer()
+
+                Label("申請中", systemImage: "paperplane.fill")
+                    .fontWeight(.bold)
+                    .foregroundStyle(AppColors.primaryDark)
+            }
+            .font(.system(size: 11, weight: .medium, design: .rounded))
+            .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(15)
+        .background(AppColors.primarySoft.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 23, style: .continuous)
+                .stroke(AppColors.border.opacity(0.8), lineWidth: 1)
+        }
     }
 }
 
-#Preview("送信中申請あり") {
+#if DEBUG
+#Preview("送信あり") {
     NavigationStack {
         OutgoingFriendRequestsView(
             store: FriendStore(
@@ -53,3 +81,4 @@ struct OutgoingFriendRequestsView: View {
         )
     }
 }
+#endif

@@ -9,4 +9,5 @@ protocol FriendRepository {
     func acceptFriendRequest(id: UUID) async throws
     func rejectFriendRequest(id: UUID) async throws
     func fetchFriends() async throws -> [Friend]
+    func fetchAvatarData(path: String) async throws -> Data
 }

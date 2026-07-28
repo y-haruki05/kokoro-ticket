@@ -6,6 +6,7 @@ final class InMemoryFriendRepository: FriendRepository {
     private var profiles: [FriendProfileSummary]
     private var requests: [FriendRequest]
     private var friendships: [Friend]
+    private var avatarDataByPath: [String: Data]
     var injectedError: AppError?
 
     init(
@@ -13,12 +14,14 @@ final class InMemoryFriendRepository: FriendRepository {
         profiles: [FriendProfileSummary] = [],
         requests: [FriendRequest] = [],
         friends: [Friend] = [],
+        avatarDataByPath: [String: Data] = [:],
         injectedError: AppError? = nil
     ) {
         self.currentUserID = currentUserID
         self.profiles = profiles
         self.requests = requests
         friendships = friends
+        self.avatarDataByPath = avatarDataByPath
         self.injectedError = injectedError
     }
 
@@ -105,6 +108,14 @@ final class InMemoryFriendRepository: FriendRepository {
     func fetchFriends() async throws -> [Friend] {
         try failIfNeeded()
         return friendships
+    }
+
+    func fetchAvatarData(path: String) async throws -> Data {
+        try failIfNeeded()
+        guard let data = avatarDataByPath[path] else {
+            throw AppError.profileAvatarLoadFailed
+        }
+        return data
     }
 
     private func respond(id: UUID, accepted: Bool) throws {
