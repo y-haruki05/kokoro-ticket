@@ -42,6 +42,8 @@ struct kokoro_ticketApp: App {
         #if DEBUG
         if CommandLine.arguments.contains("-home-preview") {
             HomeVerificationRootView()
+        } else if CommandLine.arguments.contains("-memories-preview") {
+            MemoriesVerificationRootView()
         } else if CommandLine.arguments.contains("-ticket-list-preview") {
             TicketListVerificationRootView()
         } else if CommandLine.arguments.contains("-profile-preview") {

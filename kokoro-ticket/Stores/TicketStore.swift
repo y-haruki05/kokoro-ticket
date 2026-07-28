@@ -18,6 +18,7 @@ final class TicketStore {
     private(set) var requestError: AppError?
     private(set) var requestMessage: String?
     private(set) var isCompleting = false
+    private(set) var isReloadingCompleted = false
     private(set) var completionError: AppError?
     private(set) var completionMessage: String?
     private(set) var lastErrorMessage: String?
@@ -38,7 +39,8 @@ final class TicketStore {
         isRequesting: Bool = false,
         requestError: AppError? = nil,
         isCompleting: Bool = false,
-        completionError: AppError? = nil
+        completionError: AppError? = nil,
+        isReloadingCompleted: Bool = false
     ) {
         self.repository = repository
         self.localSenderName = localSenderName
@@ -48,6 +50,7 @@ final class TicketStore {
         self.requestError = requestError
         self.isCompleting = isCompleting
         self.completionError = completionError
+        self.isReloadingCompleted = isReloadingCompleted
         reload()
     }
 
@@ -64,6 +67,7 @@ final class TicketStore {
         isCompleting: Bool = false,
         completionError: AppError? = nil,
         isReloadingRemote: Bool = false,
+        isReloadingCompleted: Bool = false,
         lastErrorMessage: String? = nil
     ) {
         let usageRequests = previewTickets.compactMap { ticket -> TicketUsageRequest? in
@@ -85,7 +89,8 @@ final class TicketStore {
                 usageRequests: usageRequests
             ),
             isCompleting: isCompleting,
-            completionError: completionError
+            completionError: completionError,
+            isReloadingCompleted: isReloadingCompleted
         )
         localTickets = previewTickets
         sentTickets = previewTickets.filter {
@@ -336,9 +341,14 @@ final class TicketStore {
     }
 
     func reloadCompletedTickets() async {
+        guard !isReloadingCompleted else { return }
+        isReloadingCompleted = true
+        defer { isReloadingCompleted = false }
+
         do {
             completedTickets = try await repository.getCompletedTickets()
             rebuildTickets()
+            completionError = nil
         } catch {
             completionError = normalizedCompletionError(error)
         }
