@@ -116,7 +116,10 @@ struct TicketDetailView: View {
             }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(.ultraThinMaterial)
+                .background(AppColors.cardBackground)
+                .overlay(alignment: .top) {
+                    Divider().overlay(AppColors.border.opacity(0.7))
+                }
         } else {
             HStack(spacing: 12) {
                 ForEach(ticket.detailActions) { action in
@@ -126,7 +129,10 @@ struct TicketDetailView: View {
             .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(.ultraThinMaterial)
+            .background(AppColors.cardBackground)
+            .overlay(alignment: .top) {
+                Divider().overlay(AppColors.border.opacity(0.7))
+            }
         }
     }
 
@@ -308,9 +314,17 @@ struct TicketDetailView: View {
 
             Spacer()
 
-            Text("チケットが見つかりません")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
+            VStack(spacing: 12) {
+                Image("cat_sad")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120, height: 100)
+                    .accessibilityHidden(true)
+
+                Text("チケットが見つかりません")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+            }
 
             Spacer()
         }

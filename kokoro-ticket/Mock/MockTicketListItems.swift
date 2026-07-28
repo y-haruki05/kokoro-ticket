@@ -44,6 +44,43 @@ enum MockTicketListItems {
         )
     ]
 
+    static let senderItems = items.map { item in
+        item.viewed(as: item.status == .draft ? .local : .sender)
+    }
+
+    static let receiverItems = [
+        copy(
+            items[1],
+            id: "10000000-0000-0000-0000-000000000002",
+            perspective: .receiver
+        ),
+        copy(
+            items[2],
+            id: "10000000-0000-0000-0000-000000000003",
+            perspective: .receiver
+        ),
+        copy(
+            items[3],
+            id: "10000000-0000-0000-0000-000000000004",
+            perspective: .receiver
+        ),
+        copy(
+            items[4],
+            id: "10000000-0000-0000-0000-000000000005",
+            perspective: .receiver
+        )
+    ]
+
+    static let allPerspectives = [
+        senderItems[0],
+        senderItems[1],
+        receiverItems[0],
+        receiverItems[1],
+        senderItems[3],
+        receiverItems[2],
+        receiverItems[3]
+    ]
+
     private static func makeTicket(
         id: String,
         title: String,
@@ -78,5 +115,29 @@ enum MockTicketListItems {
 
     private static func date(daysAgo: Int) -> Date {
         Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now
+    }
+
+    private static func copy(
+        _ item: TicketListItem,
+        id: String,
+        perspective: TicketPerspective
+    ) -> TicketListItem {
+        TicketListItem(
+            id: UUID(uuidString: id) ?? UUID(),
+            illustration: item.illustration,
+            title: item.title,
+            message: item.message,
+            senderName: item.senderName,
+            receiverName: item.receiverName,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            sentAt: item.sentAt,
+            receivedAt: item.receivedAt,
+            requestedAt: item.requestedAt,
+            completedAt: item.completedAt,
+            status: item.status,
+            perspective: perspective,
+            design: item.design
+        )
     }
 }
