@@ -9,7 +9,11 @@ struct AuthenticationRootView: View {
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
+    @State private var didReachSplashMinimumDuration = false
+    @State private var didFinishInitialSplash = false
     @State private var loadedProfileUserID: UUID?
+    @State private var isCompletingProfileSetup = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
         authRepository: any AuthRepository,
@@ -32,35 +36,29 @@ struct AuthenticationRootView: View {
     }
 
     var body: some View {
-        Group {
-            if !didRestoreSession {
-                launchView
-            } else if !sessionStore.isAuthenticated {
-                LoginView(store: sessionStore)
-            } else if loadedProfileUserID != sessionStore.currentUser?.id
-                        || profileStore.isLoading {
-                launchView
-            } else if !profileStore.isProfileCompleted {
-                ProfileSetupView(store: profileStore)
-            } else {
-                MainTabView(
-                    repository: ticketRepository,
-                    friendRepository: friendRepository,
-                    notificationRepository: notificationRepository,
-                    profileStore: profileStore,
-                    currentUserID: sessionStore.currentUser?.id,
-                    currentUserEmail: sessionStore.currentUser?.email,
-                    isAuthLoading: sessionStore.isLoading,
-                    realtimeService: realtimeService,
-                    onLogout: {
-                        Task {
-                            await sessionStore.signOut()
-                        }
-                    }
-                )
+        ZStack {
+            destination
+
+            if shouldShowSplash {
+                AppSplashView()
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
-        .authErrorAlert(store: sessionStore)
+        .animation(
+            reduceMotion ? .linear(duration: 0.01) : .easeOut(duration: 0.3),
+            value: shouldShowSplash
+        )
+        .onChange(of: shouldShowSplash) { wasShowing, isShowing in
+            if wasShowing && !isShowing {
+                didFinishInitialSplash = true
+            }
+        }
+        .task {
+            guard !didReachSplashMinimumDuration else { return }
+            try? await Task.sleep(for: .milliseconds(900))
+            didReachSplashMinimumDuration = true
+        }
         .task {
             guard !didRestoreSession else { return }
             await sessionStore.restoreSession()
@@ -69,6 +67,7 @@ struct AuthenticationRootView: View {
         .task(id: sessionStore.currentUser?.id) {
             guard let userID = sessionStore.currentUser?.id else {
                 loadedProfileUserID = nil
+                isCompletingProfileSetup = false
                 profileStore.reset()
                 return
             }
@@ -79,17 +78,68 @@ struct AuthenticationRootView: View {
         }
     }
 
-    private var launchView: some View {
-        VStack(spacing: 18) {
-            Text("こころチケット")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.primary)
+    @ViewBuilder
+    private var destination: some View {
+        if !didRestoreSession {
+            Color.white.ignoresSafeArea()
+        } else if !sessionStore.isAuthenticated {
+            LoginView(store: sessionStore)
+        } else if loadedProfileUserID != sessionStore.currentUser?.id {
+            authenticatedLoadingView
+        } else if !profileStore.isProfileCompleted || isCompletingProfileSetup {
+            ProfileSetupView(
+                store: profileStore,
+                onCompletionStateChange: { isCompletingProfileSetup = $0 }
+            )
+        } else {
+            MainTabView(
+                repository: ticketRepository,
+                friendRepository: friendRepository,
+                notificationRepository: notificationRepository,
+                profileStore: profileStore,
+                currentUserID: sessionStore.currentUser?.id,
+                currentUserEmail: sessionStore.currentUser?.email,
+                isAuthLoading: sessionStore.isLoading,
+                realtimeService: realtimeService,
+                onLogout: {
+                    Task {
+                        await sessionStore.signOut()
+                    }
+                }
+            )
+        }
+    }
+
+    private var shouldShowSplash: Bool {
+        guard !didFinishInitialSplash else { return false }
+
+        guard didReachSplashMinimumDuration, didRestoreSession else {
+            return true
+        }
+
+        if sessionStore.isAuthenticated {
+            return loadedProfileUserID != sessionStore.currentUser?.id
+        }
+
+        return false
+    }
+
+    private var authenticatedLoadingView: some View {
+        VStack(spacing: 14) {
+            Image("cat_default")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 92, height: 76)
 
             ProgressView()
                 .tint(AppColors.primary)
+
+            Text("準備しています")
+                .font(.system(.subheadline, design: .rounded, weight: .medium))
+                .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.background)
+        .background(AppColors.background.ignoresSafeArea())
     }
 }
 
