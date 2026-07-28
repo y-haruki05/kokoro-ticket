@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct TicketDetailHeaderView: View {
+    var title = "チケット詳細"
     let onBack: () -> Void
 
     var body: some View {
         ZStack {
-            Text("チケット詳細")
+            Text(title)
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary)
 
