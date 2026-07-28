@@ -5,11 +5,12 @@ struct LoginView: View {
 
     @State private var email = ""
     @State private var password = ""
+    @FocusState private var focusedField: AuthenticationInputField?
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     header
 
                     VStack(spacing: 18) {
@@ -18,7 +19,13 @@ struct LoginView: View {
                             placeholder: "example@example.com",
                             text: $email,
                             usesEmailKeyboard: true,
-                            textContentType: .emailAddress
+                            textContentType: .emailAddress,
+                            focus: .email,
+                            focusedField: $focusedField,
+                            submitLabel: .next,
+                            onSubmit: {
+                                focusedField = .password
+                            }
                         )
 
                         AuthenticationFormField(
@@ -26,7 +33,29 @@ struct LoginView: View {
                             placeholder: "パスワードを入力",
                             text: $password,
                             isSecure: true,
-                            textContentType: .password
+                            textContentType: .password,
+                            focus: .password,
+                            focusedField: $focusedField,
+                            submitLabel: .go,
+                            onSubmit: signIn
+                        )
+                    }
+                    .padding(20)
+                    .background(AppColors.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 26))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26)
+                            .stroke(AppColors.border.opacity(0.85), lineWidth: 1)
+                    }
+                    .shadow(color: AppColors.shadow, radius: 12, y: 6)
+
+                    if let error = store.authError {
+                        AuthenticationFeedbackView(
+                            imageName: "cat_sad",
+                            title: "うまくログインできませんでした",
+                            message: error.localizedDescription,
+                            actionTitle: "閉じる",
+                            action: store.clearError
                         )
                     }
 
@@ -34,48 +63,112 @@ struct LoginView: View {
                         title: "ログイン",
                         isLoading: store.isLoading
                     ) {
-                        Task {
-                            await store.signIn(email: email, password: password)
-                        }
+                        signIn()
                     }
 
                     NavigationLink {
                         RegisterView(store: store)
                     } label: {
-                        Text("はじめての方はこちら")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(AppColors.primaryDark)
+                        HStack(spacing: 5) {
+                            Text("はじめての方は")
+                                .foregroundStyle(AppColors.textSecondary)
+                            Text("新規登録")
+                                .foregroundStyle(AppColors.primaryDark)
+                        }
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .frame(minHeight: 44)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 60)
-                .padding(.bottom, 32)
+                .padding(.horizontal, 22)
+                .padding(.top, 28)
+                .padding(.bottom, 36)
             }
-            .background(AppColors.background)
-        }
-        .task {
-            await store.restoreSession()
+            .scrollDismissesKeyboard(.interactively)
+            .background(AppColors.background.ignoresSafeArea())
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("閉じる") {
+                        focusedField = nil
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
         }
     }
 
     private var header: some View {
-        VStack(spacing: 12) {
-            Text("こころチケット")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.primary)
+        VStack(spacing: 10) {
+            Image("cat_welcome")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 132, height: 108)
+                .accessibilityHidden(true)
 
             Text("おかえりなさい")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .foregroundStyle(AppColors.primaryDark)
 
-            Text("メールアドレスとパスワードでログインしてください")
-                .font(.system(size: 14, design: .rounded))
+            Text("こころチケットへログイン")
+                .font(.system(.body, design: .rounded, weight: .medium))
                 .foregroundStyle(AppColors.textSecondary)
-                .multilineTextAlignment(.center)
+        }
+    }
+
+    private func signIn() {
+        guard !store.isLoading else { return }
+        focusedField = nil
+        Task {
+            await store.signIn(email: email, password: password)
         }
     }
 }
 
-#Preview {
-    LoginView(store: SessionStore(repository: InMemoryAuthRepository()))
+#Preview("未ログイン") {
+    LoginView(
+        store: SessionStore(
+            repository: InMemoryAuthRepository(),
+            isLoading: false
+        )
+    )
+}
+
+#Preview("入力中") {
+    LoginView(
+        store: SessionStore(
+            repository: InMemoryAuthRepository(),
+            isLoading: false
+        )
+    )
+}
+
+#Preview("ログインエラー") {
+    LoginView(
+        store: SessionStore(
+            repository: InMemoryAuthRepository(),
+            isLoading: false,
+            authError: .authentication(
+                description: "メールアドレスまたはパスワードを確認してください。"
+            )
+        )
+    )
+}
+
+#Preview("Dark Mode") {
+    LoginView(
+        store: SessionStore(
+            repository: InMemoryAuthRepository(),
+            isLoading: false
+        )
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("iPhone SE相当", traits: .fixedLayout(width: 375, height: 667)) {
+    LoginView(
+        store: SessionStore(
+            repository: InMemoryAuthRepository(),
+            isLoading: false
+        )
+    )
 }

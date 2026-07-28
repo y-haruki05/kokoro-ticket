@@ -4,12 +4,20 @@ import Foundation
 final class InMemoryAuthRepository: AuthRepository {
     private var session: AuthSession?
     private var continuation: AsyncStream<AuthSession?>.Continuation?
+    private let signUpRequiresEmailConfirmation: Bool
 
-    init(session: AuthSession? = nil) {
+    init(
+        session: AuthSession? = nil,
+        signUpRequiresEmailConfirmation: Bool = false
+    ) {
         self.session = session
+        self.signUpRequiresEmailConfirmation = signUpRequiresEmailConfirmation
     }
 
     func signUp(email: String, password: String) async throws -> AuthSession? {
+        if signUpRequiresEmailConfirmation {
+            return nil
+        }
         let session = makeSession(email: email)
         setSession(session)
         return session

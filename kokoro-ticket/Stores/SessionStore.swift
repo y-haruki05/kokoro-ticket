@@ -9,6 +9,7 @@ final class SessionStore {
     private(set) var isLoading = true
     private(set) var authError: AppError?
     private(set) var registrationMessage: String?
+    private(set) var pendingConfirmationEmail: String?
 
     var isAuthenticated: Bool {
         session != nil
@@ -20,8 +21,16 @@ final class SessionStore {
     @ObservationIgnored
     private var sessionTask: Task<Void, Never>?
 
-    init(repository: any AuthRepository) {
+    init(
+        repository: any AuthRepository,
+        isLoading: Bool = true,
+        authError: AppError? = nil,
+        pendingConfirmationEmail: String? = nil
+    ) {
         self.repository = repository
+        self.isLoading = isLoading
+        self.authError = authError
+        self.pendingConfirmationEmail = pendingConfirmationEmail
     }
 
     func restoreSession() async {
@@ -81,9 +90,13 @@ final class SessionStore {
                 password: password
             )
             apply(newSession)
-            registrationMessage = newSession == nil
-                ? "確認メールを送信しました。メール内のリンクから登録を完了してください。"
-                : nil
+            if newSession == nil {
+                registrationMessage = "確認メールを送信しました。メール内のリンクから登録を完了してください。"
+                pendingConfirmationEmail = normalizedEmail
+            } else {
+                registrationMessage = nil
+                pendingConfirmationEmail = nil
+            }
             authError = nil
         } catch {
             authError = normalized(error)
@@ -111,6 +124,11 @@ final class SessionStore {
 
     func clearRegistrationMessage() {
         registrationMessage = nil
+    }
+
+    func clearPendingConfirmation() {
+        registrationMessage = nil
+        pendingConfirmationEmail = nil
     }
 
     private func observeSessionChanges() {
