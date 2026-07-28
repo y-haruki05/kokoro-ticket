@@ -12,16 +12,22 @@ enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .draft: "保存済み"
-        case .sent: "送った"
-        case .received: "受け取った"
-        case .requested: "リクエスト中"
-        case .completed: "完了"
+        case .draft: "保存したチケット"
+        case .sent: "送ったチケット"
+        case .received: "受け取ったチケット"
+        case .requested: "対応待ち"
+        case .completed: "完了したチケット"
         }
     }
 
     var statusLabel: String {
-        self == .requested ? "実行待ち" : displayName
+        switch self {
+        case .draft: "保存済み"
+        case .sent: "送信済み"
+        case .received: "受取済み"
+        case .requested: "対応待ち"
+        case .completed: "完了しました"
+        }
     }
 }
 

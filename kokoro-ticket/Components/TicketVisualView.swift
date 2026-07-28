@@ -113,7 +113,7 @@ struct TicketVisualView: View {
                 ticketBorder
             }
         }
-        .aspectRatio(size == .large ? 1.95 : 1.9, contentMode: .fit)
+        .aspectRatio(size == .large ? 1.95 : 2.08, contentMode: .fit)
         .shadow(color: AppColors.shadow.opacity(0.8), radius: size == .large ? 10 : 6, y: 4)
         .contentShape(TicketShape())
         .accessibilityElement(children: .combine)
@@ -126,8 +126,8 @@ struct TicketVisualView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(
-                    width: size == .large ? 92 : 54,
-                    height: size == .large ? 92 : 54
+                    width: size == .large ? 92 : 48,
+                    height: size == .large ? 92 : 48
                 )
                 .clipShape(RoundedRectangle(cornerRadius: size == .large ? 16 : 10))
                 .accessibilityHidden(true)

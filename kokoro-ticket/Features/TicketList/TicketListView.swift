@@ -6,6 +6,7 @@ struct TicketListView: View {
     let onCreateTicket: () -> Void
     var onDetailVisibilityChange: (Bool) -> Void = { _ in }
     var onTicketCompleted: () -> Void = {}
+    private let loadsRemoteData: Bool
 
     @State private var selectedStatus: TicketStatus
 
@@ -15,30 +16,50 @@ struct TicketListView: View {
         onCreateTicket: @escaping () -> Void,
         onDetailVisibilityChange: @escaping (Bool) -> Void = { _ in },
         onTicketCompleted: @escaping () -> Void = {},
-        initialStatus: TicketStatus = .draft
+        initialStatus: TicketStatus = .draft,
+        loadsRemoteData: Bool = true
     ) {
         self.store = store
         self.friendStore = friendStore
         self.onCreateTicket = onCreateTicket
         self.onDetailVisibilityChange = onDetailVisibilityChange
         self.onTicketCompleted = onTicketCompleted
+        self.loadsRemoteData = loadsRemoteData
         _selectedStatus = State(initialValue: initialStatus)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("チケット一覧")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 16)
-                .padding(.bottom, 22)
+            VStack(spacing: 4) {
+                Text("チケットBOX")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.primary)
+
+                Text("大切なチケットをひらいてみよう")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 14)
+            .padding(.bottom, 18)
 
             TicketListSegmentedControl(selection: $selectedStatus)
 
             ScrollView {
-                if filteredTickets.isEmpty {
-                    TicketListEmptyView(onCreateTicket: onCreateTicket)
+                if store.isReloadingRemote && filteredTickets.isEmpty {
+                    TicketListLoadingView()
+                } else if store.lastErrorMessage != nil && filteredTickets.isEmpty {
+                    TicketListLoadErrorView {
+                        Task {
+                            store.reload()
+                            await store.reloadRemoteTickets()
+                        }
+                    }
+                } else if filteredTickets.isEmpty {
+                    TicketListEmptyView(
+                        status: selectedStatus,
+                        onCreateTicket: onCreateTicket
+                    )
                 } else {
                     LazyVStack(spacing: 14) {
                         ForEach(filteredTickets) { ticket in
@@ -46,14 +67,27 @@ struct TicketListView: View {
                                 TicketListCardView(ticket: ticket)
                             }
                             .buttonStyle(.plain)
+                            .transition(
+                                .opacity.combined(with: .scale(scale: 0.98))
+                            )
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 22)
+                    .padding(.top, 18)
                     .padding(.bottom, 112)
+                    .animation(
+                        .easeInOut(duration: 0.22),
+                        value: filteredTickets.map(\.id)
+                    )
                 }
             }
             .contentMargins(.top, 1, for: .scrollContent)
+            .refreshable {
+                store.reload()
+                if loadsRemoteData {
+                    await store.reloadRemoteTickets()
+                }
+            }
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
@@ -74,12 +108,10 @@ struct TicketListView: View {
                     onDetailVisibilityChange(false)
                 }
         }
-        .refreshable {
-            store.reload()
-            await store.reloadRemoteTickets()
-        }
         .task {
-            await store.reloadRemoteTickets()
+            if loadsRemoteData {
+                await store.reloadRemoteTickets()
+            }
         }
         .overlay(alignment: .bottom) {
             if let message = store.completionMessage
@@ -148,9 +180,10 @@ struct TicketListView: View {
 #Preview {
     NavigationStack {
         TicketListView(
-            store: TicketStore(tickets: MockTicketListItems.items),
+            store: TicketStore(previewTickets: MockTicketListItems.allPerspectives),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
-            onCreateTicket: {}
+            onCreateTicket: {},
+            loadsRemoteData: false
         )
     }
 }
@@ -158,10 +191,11 @@ struct TicketListView: View {
 #Preview("送った") {
     NavigationStack {
         TicketListView(
-            store: TicketStore(tickets: MockTicketListItems.items),
+            store: TicketStore(previewTickets: MockTicketListItems.senderItems),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
-            initialStatus: .sent
+            initialStatus: .sent,
+            loadsRemoteData: false
         )
     }
 }
@@ -169,10 +203,11 @@ struct TicketListView: View {
 #Preview("受け取った") {
     NavigationStack {
         TicketListView(
-            store: TicketStore(tickets: MockTicketListItems.items),
+            store: TicketStore(previewTickets: MockTicketListItems.receiverItems),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
-            initialStatus: .received
+            initialStatus: .received,
+            loadsRemoteData: false
         )
     }
 }
@@ -180,10 +215,11 @@ struct TicketListView: View {
 #Preview("リクエスト中・対応待ち") {
     NavigationStack {
         TicketListView(
-            store: TicketStore(tickets: MockTicketListItems.items),
+            store: TicketStore(previewTickets: MockTicketListItems.allPerspectives),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
-            initialStatus: .requested
+            initialStatus: .requested,
+            loadsRemoteData: false
         )
     }
 }
@@ -199,7 +235,117 @@ struct TicketListView: View {
             ),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
-            initialStatus: .received
+            initialStatus: .received,
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("対応待ち・送り主") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: MockTicketListItems.senderItems
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .requested,
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("対応待ち・受取人") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: MockTicketListItems.receiverItems
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .requested,
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("完了したチケット") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: MockTicketListItems.allPerspectives
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .completed,
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("0件") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(previewTickets: []),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("Loading") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: [],
+                isReloadingRemote: true
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("読み込みエラー") {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: [],
+                lastErrorMessage: "チケットの読み込みに失敗しました"
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            loadsRemoteData: false
+        )
+    }
+}
+
+#Preview("Dark Mode", traits: .fixedLayout(width: 393, height: 852)) {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: MockTicketListItems.allPerspectives
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            initialStatus: .received,
+            loadsRemoteData: false
+        )
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("iPhone SE", traits: .fixedLayout(width: 375, height: 667)) {
+    NavigationStack {
+        TicketListView(
+            store: TicketStore(
+                previewTickets: MockTicketListItems.allPerspectives
+            ),
+            friendStore: FriendStore(repository: InMemoryFriendRepository()),
+            onCreateTicket: {},
+            loadsRemoteData: false
         )
     }
 }
@@ -217,7 +363,8 @@ struct TicketListView: View {
             ),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
             onCreateTicket: {},
-            initialStatus: .received
+            initialStatus: .received,
+            loadsRemoteData: false
         )
     }
 }
@@ -232,7 +379,8 @@ struct TicketListView: View {
                 sendError: .ticketReceiverNotFriend
             ),
             friendStore: FriendStore(repository: InMemoryFriendRepository()),
-            onCreateTicket: {}
+            onCreateTicket: {},
+            loadsRemoteData: false
         )
     }
 }

@@ -62,7 +62,9 @@ final class TicketStore {
     convenience init(
         previewTickets: [TicketListItem],
         isCompleting: Bool = false,
-        completionError: AppError? = nil
+        completionError: AppError? = nil,
+        isReloadingRemote: Bool = false,
+        lastErrorMessage: String? = nil
     ) {
         let usageRequests = previewTickets.compactMap { ticket -> TicketUsageRequest? in
             guard [.requested, .completed].contains(ticket.status) else {
@@ -99,6 +101,8 @@ final class TicketStore {
             $0.perspective != .receiver && $0.status == .requested
         }
         completedTickets = previewTickets.filter { $0.status == .completed }
+        self.isReloadingRemote = isReloadingRemote
+        self.lastErrorMessage = lastErrorMessage
         rebuildTickets()
     }
 
@@ -106,15 +110,22 @@ final class TicketStore {
         let source: [TicketListItem]
         switch status {
         case .sent:
-            source = sentTickets
+            source = sentTickets.filter {
+                $0.perspective != .receiver
+                    && [.sent, .received].contains($0.status)
+            }
         case .received:
-            source = receivedTickets
+            source = receivedTickets.filter {
+                $0.perspective == .receiver
+                    && [.sent, .received].contains($0.status)
+            }
         case .requested:
-            source = requestedTickets + waitingTickets
+            source = (requestedTickets + waitingTickets)
+                .filter { $0.status == .requested }
         case .completed:
-            source = completedTickets
-        default:
-            source = tickets.filter { $0.status == status }
+            source = completedTickets.filter { $0.status == .completed }
+        case .draft:
+            source = tickets.filter { $0.status == .draft }
         }
         return source
             .sorted { $0.updatedAt > $1.updatedAt }

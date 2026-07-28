@@ -4,7 +4,7 @@ struct TicketDetailCardView: View {
     let ticket: TicketListItem
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 22) {
             TicketVisualView(
                 title: ticket.title,
                 message: ticket.message,
@@ -15,89 +15,75 @@ struct TicketDetailCardView: View {
                 size: .large
             )
 
-            Divider()
-                .overlay(AppColors.border.opacity(0.7))
-
-            HStack(alignment: .top, spacing: 16) {
-                personDetail(title: "差出人", value: ticket.senderName)
-                personDetail(title: "宛先", value: ticket.receiverName ?? "送り先未選択")
-            }
-
-            HStack {
-                metadata(
-                    title: "作成日",
-                    value: ticket.createdAt.formatted(date: .numeric, time: .omitted)
-                )
-
-                Spacer()
-
-                TicketStatusLabel(status: ticket.status)
-            }
-
-            if let sentAt = ticket.sentAt {
+            VStack(alignment: .leading, spacing: 18) {
                 HStack {
-                    metadata(
-                        title: "送信日時",
-                        value: sentAt.formatted(date: .numeric, time: .shortened)
-                    )
+                    Text("チケットについて")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
 
                     Spacer()
-                }
-                .padding(.top, -4)
-            }
 
-            if let requestedAt = ticket.requestedAt {
-                HStack {
-                    metadata(
-                        title: "リクエスト日時",
-                        value: requestedAt.formatted(date: .numeric, time: .shortened)
+                    TicketStatusLabel(
+                        status: ticket.status,
+                        title: contextualStatusText
                     )
-                    Spacer()
                 }
-                .padding(.top, -4)
-            }
 
-            if let receivedAt = ticket.receivedAt {
-                HStack {
-                    metadata(
-                        title: "受取日時",
-                        value: receivedAt.formatted(date: .numeric, time: .shortened)
+                if !ticket.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(ticket.message)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(5)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Divider()
+                    .overlay(AppColors.border.opacity(0.7))
+
+                HStack(alignment: .top, spacing: 16) {
+                    personDetail(title: "差出人", value: ticket.senderName)
+                    personDetail(title: "受け取る人", value: ticket.receiverName ?? "まだ選ばれていません")
+                }
+
+                VStack(spacing: 11) {
+                    infoRow(
+                        title: "作成日",
+                        date: ticket.createdAt
                     )
-                    Spacer()
+                    if let sentAt = ticket.sentAt {
+                        infoRow(title: "送信日", date: sentAt)
+                    }
+                    if let receivedAt = ticket.receivedAt {
+                        infoRow(title: "受取日", date: receivedAt)
+                    }
+                    if let requestedAt = ticket.requestedAt {
+                        infoRow(title: "リクエスト日", date: requestedAt)
+                    }
+                    if let completedAt = ticket.completedAt {
+                        infoRow(title: "完了日", date: completedAt)
+                    }
                 }
-                .padding(.top, -4)
-            }
 
-            if let completedAt = ticket.completedAt {
-                HStack {
-                    metadata(
-                        title: "完了日時",
-                        value: completedAt.formatted(date: .numeric, time: .shortened)
+                HStack(spacing: 8) {
+                    designDetail(
+                        title: "背景",
+                        value: ticket.design.backgroundColor.displayName
                     )
-                    Spacer()
+                    designDetail(
+                        title: "枠",
+                        value: ticket.design.borderStyle.displayName
+                    )
                 }
-                .padding(.top, -4)
             }
-
-            HStack(spacing: 10) {
-                designDetail(
-                    title: "背景色",
-                    value: ticket.design.backgroundColor.displayName
-                )
-                designDetail(
-                    title: "枠デザイン",
-                    value: ticket.design.borderStyle.displayName
-                )
+            .padding(20)
+            .background(AppColors.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22)
+                    .stroke(AppColors.border.opacity(0.85), lineWidth: 1)
             }
+            .shadow(color: AppColors.shadow.opacity(0.65), radius: 10, y: 5)
         }
-        .padding(18)
-        .background(AppColors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(AppColors.border, lineWidth: 1)
-        }
-        .shadow(color: AppColors.shadow, radius: 14, y: 7)
         .accessibilityElement(children: .combine)
     }
 
@@ -114,15 +100,15 @@ struct TicketDetailCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func metadata(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    private func infoRow(title: String, date: Date) -> some View {
+        HStack {
             Text(title)
-                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(AppColors.textSecondary)
-            Text(value)
-                .font(.system(size: 12, weight: .semibold))
+            Spacer()
+            Text(date.formatted(date: .numeric, time: .shortened))
                 .foregroundStyle(AppColors.textPrimary)
         }
+        .font(.system(size: 13, weight: .semibold, design: .rounded))
     }
 
     private func designDetail(title: String, value: String) -> some View {
@@ -138,8 +124,18 @@ struct TicketDetailCardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(AppColors.cardBackground.opacity(0.72))
+        .background(AppColors.primarySoft.opacity(0.65))
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var contextualStatusText: String {
+        switch (ticket.perspective, ticket.status) {
+        case (.receiver, .requested): "相手の対応待ち"
+        case (.sender, .requested), (.local, .requested): "対応待ち"
+        case (.receiver, .sent): "受け取れます"
+        case (_, .completed): "完了しました"
+        default: ticket.status.statusLabel
+        }
     }
 }
 
