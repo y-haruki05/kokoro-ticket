@@ -30,6 +30,7 @@ enum FriendSearchRelationship: String, Codable, Sendable {
     case outgoingPending = "outgoing_pending"
     case incomingPending = "incoming_pending"
     case friend
+    case selfProfile = "self"
 }
 
 struct FriendSearchResult: Identifiable, Hashable, Sendable {

@@ -368,7 +368,8 @@ struct ProfileView: View {
                     FriendListView(
                         store: friendStore,
                         profile: profile,
-                        clipboard: clipboard
+                        clipboard: clipboard,
+                        currentAvatarData: store.avatarData
                     )
                 } label: {
                     ProfileSettingsRow(

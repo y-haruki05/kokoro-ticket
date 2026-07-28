@@ -155,7 +155,8 @@ struct TicketFriendSelectionView: View {
                                 displayName: friend.displayName,
                                 friendCode: friend.friendCode,
                                 avatarKey: friend.avatarKey
-                            )
+                            ),
+                            store: friendStore
                         )
                     }
                 }

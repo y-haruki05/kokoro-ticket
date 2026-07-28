@@ -8,11 +8,14 @@ final class FriendStore {
     private(set) var incomingRequests: [FriendRequest]
     private(set) var outgoingRequests: [FriendRequest]
     private(set) var searchResult: FriendSearchResult?
+    private(set) var hasSearched = false
     private(set) var isSearching = false
     private(set) var isLoading = false
     private(set) var error: AppError?
     private(set) var requestMessage: String?
     private(set) var processingRequestIDs: Set<UUID> = []
+    private(set) var avatarDataByPath: [String: Data] = [:]
+    private(set) var loadingAvatarPaths: Set<String> = []
 
     @ObservationIgnored
     private let repository: any FriendRepository
@@ -23,6 +26,7 @@ final class FriendStore {
         incomingRequests: [FriendRequest] = [],
         outgoingRequests: [FriendRequest] = [],
         searchResult: FriendSearchResult? = nil,
+        hasSearched: Bool = false,
         isSearching: Bool = false,
         isLoading: Bool = false,
         error: AppError? = nil
@@ -32,6 +36,7 @@ final class FriendStore {
         self.incomingRequests = incomingRequests
         self.outgoingRequests = outgoingRequests
         self.searchResult = searchResult
+        self.hasSearched = hasSearched || searchResult != nil
         self.isSearching = isSearching
         self.isLoading = isLoading
         self.error = error
@@ -57,18 +62,28 @@ final class FriendStore {
         }
     }
 
-    func search(friendCode: String) async {
+    func search(friendCode: String, currentProfile: Profile? = nil) async {
         guard !isSearching else { return }
         do {
             let code = try normalizeFriendCode(friendCode)
+            hasSearched = true
+            if let currentProfile, currentProfile.friendCode == code {
+                searchResult = FriendSearchResult(
+                    profile: FriendProfileSummary(
+                        id: currentProfile.id,
+                        displayName: currentProfile.displayName,
+                        friendCode: currentProfile.friendCode,
+                        avatarKey: currentProfile.avatarKey
+                    ),
+                    relationship: .selfProfile
+                )
+                error = nil
+                return
+            }
             isSearching = true
             defer { isSearching = false }
             searchResult = try await repository.searchProfile(friendCode: code)
-            if searchResult == nil {
-                error = .friendNotFound
-            } else {
-                error = nil
-            }
+            error = nil
         } catch {
             self.error = normalize(error)
         }
@@ -106,6 +121,39 @@ final class FriendStore {
 
     func clearMessage() {
         requestMessage = nil
+    }
+
+    func clearSearch() {
+        searchResult = nil
+        hasSearched = false
+    }
+
+    func avatarData(for path: String?) -> Data? {
+        guard let path else { return nil }
+        return avatarDataByPath[path]
+    }
+
+    func loadAvatar(path: String?) async {
+        guard
+            let path,
+            !path.isEmpty,
+            avatarDataByPath[path] == nil,
+            !loadingAvatarPaths.contains(path)
+        else { return }
+
+        loadingAvatarPaths.insert(path)
+        defer { loadingAvatarPaths.remove(path) }
+        do {
+            avatarDataByPath[path] = try await repository.fetchAvatarData(path: path)
+        } catch {
+            // Avatar failures intentionally fall back to cat_default without
+            // blocking friend operations.
+        }
+    }
+
+    func isLoadingAvatar(path: String?) -> Bool {
+        guard let path else { return false }
+        return loadingAvatarPaths.contains(path)
     }
 
     @discardableResult
