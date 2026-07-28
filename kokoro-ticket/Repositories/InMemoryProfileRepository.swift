@@ -7,18 +7,31 @@ final class InMemoryProfileRepository: ProfileRepository {
     private var profile: Profile?
     private var reservedFriendCodes: Set<String>
     private var codeCandidates: [String]
+    private var avatarDataByPath: [String: Data]
+    private let avatarOperationDelay: Duration
+    private let avatarError: AppError?
 
     init(
         currentUserID: UUID = UUID(),
         profile: Profile? = nil,
         reservedFriendCodes: Set<String> = [],
         codeCandidates: [String] = [],
+        avatarData: Data? = nil,
+        avatarOperationDelay: Duration = .zero,
+        avatarError: AppError? = nil,
         generator: FriendCodeGenerator = FriendCodeGenerator()
     ) {
         self.currentUserID = currentUserID
         self.profile = profile
         self.reservedFriendCodes = reservedFriendCodes
         self.codeCandidates = codeCandidates
+        avatarDataByPath = if let key = profile?.avatarKey, let avatarData {
+            [key: avatarData]
+        } else {
+            [:]
+        }
+        self.avatarOperationDelay = avatarOperationDelay
+        self.avatarError = avatarError
         self.generator = generator
 
         if let profile {
@@ -60,6 +73,62 @@ final class InMemoryProfileRepository: ProfileRepository {
         }
 
         profile.displayName = displayName
+        profile.updatedAt = .now
+        self.profile = profile
+        return profile
+    }
+
+    func fetchAvatarData(path: String) async throws -> Data {
+        if avatarOperationDelay != .zero {
+            try await Task.sleep(for: avatarOperationDelay)
+        }
+        if let avatarError {
+            throw avatarError
+        }
+        guard let data = avatarDataByPath[path] else {
+            throw AppError.profileAvatarLoadFailed
+        }
+        return data
+    }
+
+    func updateAvatar(imageData: Data) async throws -> Profile {
+        if avatarOperationDelay != .zero {
+            try await Task.sleep(for: avatarOperationDelay)
+        }
+        if let avatarError {
+            throw avatarError
+        }
+        guard var profile else {
+            throw AppError.profileNotFound
+        }
+
+        let oldKey = profile.avatarKey
+        let key = "\(currentUserID.uuidString.lowercased())/avatar-preview.jpg"
+        avatarDataByPath[key] = imageData
+        if let oldKey, oldKey != key {
+            avatarDataByPath.removeValue(forKey: oldKey)
+        }
+        profile.avatarKey = key
+        profile.updatedAt = .now
+        self.profile = profile
+        return profile
+    }
+
+    func removeAvatar() async throws -> Profile {
+        if avatarOperationDelay != .zero {
+            try await Task.sleep(for: avatarOperationDelay)
+        }
+        if let avatarError {
+            throw avatarError
+        }
+        guard var profile else {
+            throw AppError.profileNotFound
+        }
+
+        if let key = profile.avatarKey {
+            avatarDataByPath.removeValue(forKey: key)
+        }
+        profile.avatarKey = nil
         profile.updatedAt = .now
         self.profile = profile
         return profile

@@ -44,6 +44,8 @@ struct kokoro_ticketApp: App {
             HomeVerificationRootView()
         } else if CommandLine.arguments.contains("-ticket-list-preview") {
             TicketListVerificationRootView()
+        } else if CommandLine.arguments.contains("-profile-preview") {
+            ProfileVerificationRootView()
         } else if CommandLine.arguments.contains("-auth-preview") {
             AuthenticationVerificationRootView()
         } else {

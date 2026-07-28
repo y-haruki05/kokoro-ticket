@@ -18,6 +18,16 @@ enum AppError: Error, LocalizedError, Equatable {
     case invalidDisplayName
     case profileNotFound
     case profile(description: String)
+    case profileAvatarInvalid
+    case profileAvatarTooLarge
+    case profileAvatarLoadFailed
+    case profileAvatarUploadFailed
+    case profileAvatarDeleteFailed
+    case profileAvatarStorageUnavailable
+    case profileAvatarPermissionDenied
+    case profileAvatarAlreadyExists
+    case profileAvatarInvalidMimeType
+    case profileAvatar(description: String)
     case friendCodeGenerationFailed
     case friendCodeDuplicated
     case invalidFriendCode
@@ -101,6 +111,26 @@ enum AppError: Error, LocalizedError, Equatable {
         case .profileNotFound:
             "プロフィールが見つかりません"
         case let .profile(description):
+            description
+        case .profileAvatarInvalid:
+            "選んだ画像を読み込めませんでした。別の画像をお試しください"
+        case .profileAvatarTooLarge:
+            "画像のサイズが大きすぎます。別の画像をお試しください"
+        case .profileAvatarLoadFailed:
+            "プロフィール画像を読み込めませんでした"
+        case .profileAvatarUploadFailed:
+            "プロフィール画像を保存できませんでした"
+        case .profileAvatarDeleteFailed:
+            "プロフィール画像を削除できませんでした"
+        case .profileAvatarStorageUnavailable:
+            "プロフィール画像の保存先が準備されていません"
+        case .profileAvatarPermissionDenied:
+            "プロフィール画像を変更する権限を確認できませんでした"
+        case .profileAvatarAlreadyExists:
+            "画像の保存が重複しました。もう一度お試しください"
+        case .profileAvatarInvalidMimeType:
+            "この画像形式は保存できません。別の画像をお試しください"
+        case let .profileAvatar(description):
             description
         case .friendCodeGenerationFailed:
             "フレンドコードを発行できませんでした。もう一度お試しください"

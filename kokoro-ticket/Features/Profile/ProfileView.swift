@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UIKit
 
 @MainActor
 struct ProfileView: View {
@@ -11,8 +13,12 @@ struct ProfileView: View {
 
     private let clipboard: any ClipboardWriting
 
+    @State private var selectedPhoto: PhotosPickerItem?
     @State private var isShowingNameEditor = false
+    @State private var isShowingLogoutConfirmation = false
+    @State private var isShowingAvatarDeleteConfirmation = false
     @State private var showsCopyMessage = false
+    @State private var showsAvatarMessage = false
 
     init(
         store: ProfileStore,
@@ -21,6 +27,7 @@ struct ProfileView: View {
         isAuthLoading: Bool,
         clipboard: any ClipboardWriting,
         deepLink: Binding<AppDeepLink?> = .constant(nil),
+        showsAvatarDeleteConfirmationInitially: Bool = false,
         onLogout: @escaping () -> Void
     ) {
         self.store = store
@@ -29,221 +36,728 @@ struct ProfileView: View {
         self.isAuthLoading = isAuthLoading
         self.clipboard = clipboard
         _deepLink = deepLink
+        _isShowingAvatarDeleteConfirmation = State(
+            initialValue: showsAvatarDeleteConfirmationInitially
+        )
         self.onLogout = onLogout
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                if let profile = store.profile {
-                    VStack(spacing: 24) {
-                        ProfileAvatarPlaceholderView()
-
-                        profileCard(profile)
-                        NavigationLink {
-                            FriendListView(
-                                store: friendStore,
-                                profile: profile,
-                                clipboard: clipboard
-                            )
-                        } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: "person.2.fill")
-                                    .foregroundStyle(AppColors.primary)
-                                    .frame(width: 42, height: 42)
-                                    .background(AppColors.primarySoft)
-                                    .clipShape(Circle())
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("フレンド")
-                                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                                        .foregroundStyle(AppColors.textPrimary)
-                                    Text("検索・申請・フレンド一覧")
-                                        .font(.system(size: 13, design: .rounded))
-                                        .foregroundStyle(AppColors.textSecondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(AppColors.textSecondary)
-                            }
-                            .padding(18)
-                            .background(AppColors.cardBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .contentShape(RoundedRectangle(cornerRadius: 18))
-                        }
-                        .buttonStyle(.plain)
-                        accountCard
-                        logoutButton
+                Group {
+                    if store.isLoading && store.profile == nil {
+                        loadingContent
+                    } else if let profile = store.profile {
+                        profileContent(profile)
+                    } else {
+                        unavailableContent
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 28)
-                    .padding(.bottom, 110)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 112)
+            }
+            .refreshable {
+                await store.reloadProfile()
             }
             .background(AppColors.background)
             .navigationTitle("マイページ")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $isShowingNameEditor) {
                 ProfileDisplayNameEditView(store: store)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
             }
             .overlay(alignment: .bottom) {
-                if showsCopyMessage {
-                    Text("フレンドコードをコピーしました")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 12)
-                        .background(AppColors.primaryDark)
-                        .clipShape(Capsule())
-                        .padding(.bottom, 94)
-                        .transition(.opacity)
+                feedbackOverlay
+            }
+            .confirmationDialog(
+                "プロフィール画像を削除しますか？",
+                isPresented: $isShowingAvatarDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("画像を削除", role: .destructive) {
+                    Task {
+                        await store.removeAvatar()
+                        showAvatarFeedbackIfNeeded()
+                    }
                 }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("画像未設定の状態へ戻り、ここにゃんが表示されます。")
             }
-        }
-        .navigationDestination(
-            isPresented: Binding(
-                get: { deepLink != nil },
-                set: { if !$0 { deepLink = nil } }
-            )
-        ) {
-            switch deepLink {
-            case let .incomingFriendRequest(id):
-                FriendRequestDetailView(requestID: id, store: friendStore)
-            case let .friend(id):
-                FriendDetailView(friendID: id, store: friendStore)
-            default:
-                ContentUnavailableView(
-                    "対象の情報を表示できません",
-                    systemImage: "exclamationmark.triangle"
+            .confirmationDialog(
+                "ログアウトしますか？",
+                isPresented: $isShowingLogoutConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("ログアウト", role: .destructive, action: onLogout)
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("いつでも同じアカウントで戻ってこられます。")
+            }
+            .navigationDestination(
+                isPresented: Binding(
+                    get: { deepLink != nil },
+                    set: { if !$0 { deepLink = nil } }
                 )
+            ) {
+                deepLinkDestination
             }
         }
-        .profileErrorAlert(store: store)
     }
 
-    private func profileCard(_ profile: Profile) -> some View {
-        VStack(spacing: 18) {
-            HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("表示名")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(AppColors.textSecondary)
-
-                    Text(profile.displayName)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary)
-                }
-
-                Spacer()
-
-                Button("変更") {
-                    isShowingNameEditor = true
-                }
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.primaryDark)
+    private func profileContent(_ profile: Profile) -> some View {
+        VStack(spacing: 24) {
+            if store.error != nil && !isShowingNameEditor {
+                inlineProfileError
+            }
+            if store.avatarError != nil {
+                inlineAvatarError
             }
 
-            Divider()
+            profileHeader(profile)
 
-            VStack(spacing: 10) {
-                Text("フレンドコード")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(AppColors.textSecondary)
+            if store.pendingAvatarData != nil {
+                pendingAvatarActions
+            }
 
-                Text(profile.friendCode)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .tracking(3)
+            settingsContent(profile)
+        }
+    }
+
+    private func profileHeader(_ profile: Profile) -> some View {
+        VStack(spacing: 11) {
+            PhotosPicker(
+                selection: $selectedPhoto,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                ZStack(alignment: .bottomTrailing) {
+                    avatarImage
+                        .frame(width: 106, height: 106)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(AppColors.primary.opacity(0.5), lineWidth: 2)
+                        }
+                        .shadow(color: AppColors.shadow, radius: 8, y: 4)
+
+                    Image(systemName: "pencil")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 32, height: 32)
+                        .background(AppColors.primary)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle().stroke(AppColors.cardBackground, lineWidth: 3)
+                        }
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(store.isAvatarLoading || store.isAvatarSaving)
+            .accessibilityLabel("プロフィール画像を選ぶ")
+            .onChange(of: selectedPhoto) { _, item in
+                guard let item else { return }
+                Task {
+                    await loadSelectedPhoto(item)
+                    selectedPhoto = nil
+                }
+            }
+
+            Text(profile.displayName)
+                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .multilineTextAlignment(.center)
+
+            Text(email ?? "メールアドレス未設定")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+
+            friendCodeView(profile.friendCode)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 24)
+        .background(AppColors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 26))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26)
+                .stroke(AppColors.border, lineWidth: 1.2)
+        }
+        .shadow(color: AppColors.shadow, radius: 12, y: 5)
+    }
+
+    @ViewBuilder
+    private var avatarImage: some View {
+        ZStack {
+            AppColors.primarySoft
+
+            if let data = store.pendingAvatarData ?? store.avatarData,
+               let image = UIImage(data: data) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image("cat_default")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(7)
+                    .accessibilityHidden(true)
+            }
+
+            if store.isAvatarLoading || store.isAvatarSaving {
+                Color.white.opacity(0.72)
+                ProgressView()
+                    .tint(AppColors.primaryDark)
+            }
+        }
+        .clipped()
+    }
+
+    private func friendCodeView(_ friendCode: String) -> some View {
+        VStack(spacing: 7) {
+            Text("フレンドコード")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+
+            HStack(spacing: 10) {
+                Text(friendCode)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .tracking(2.4)
                     .foregroundStyle(AppColors.primaryDark)
                     .textSelection(.enabled)
 
                 Button {
-                    copyFriendCode(profile.friendCode)
+                    copyFriendCode(friendCode)
                 } label: {
-                    Label("コードをコピー", systemImage: "doc.on.doc")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                    Image(systemName: "doc.on.doc.fill")
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(AppColors.primaryDark)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(AppColors.primarySoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
-                        .contentShape(RoundedRectangle(cornerRadius: 15))
+                        .frame(width: 38, height: 38)
+                        .background(AppColors.cardBackground)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle().stroke(AppColors.border, lineWidth: 1)
+                        }
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("フレンドコードをコピー")
             }
         }
-        .padding(20)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(AppColors.primarySoft.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 17))
+    }
+
+    private var pendingAvatarActions: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 11) {
+                Image(systemName: "photo.badge.checkmark")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AppColors.primaryDark)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("この画像を使いますか？")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text("保存するまで現在の画像は変更されません")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 10) {
+                Button("選び直す") {
+                    store.discardPendingAvatar()
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.primaryDark)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(AppColors.primarySoft)
+                .clipShape(Capsule())
+
+                Button {
+                    Task {
+                        await store.savePendingAvatar()
+                        showAvatarFeedbackIfNeeded()
+                    }
+                } label: {
+                    HStack(spacing: 7) {
+                        if store.isAvatarSaving {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                        Text(store.isAvatarSaving ? "保存中…" : "保存する")
+                    }
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(AppColors.primary)
+                    .clipShape(Capsule())
+                }
+                .disabled(store.isAvatarSaving)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
         .background(AppColors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay {
             RoundedRectangle(cornerRadius: 20)
-                .stroke(AppColors.border, lineWidth: 1.5)
+                .stroke(AppColors.border, lineWidth: 1)
         }
-        .shadow(color: AppColors.shadow, radius: 10, y: 4)
     }
 
-    private var accountCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("ログイン中のメールアドレス")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-
-            Text(email ?? "メールアドレス未設定")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(AppColors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-    }
-
-    private var logoutButton: some View {
-        Button(action: onLogout) {
-            Text(isAuthLoading ? "ログアウト中…" : "ログアウト")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.primaryDark)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(AppColors.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(AppColors.border, lineWidth: 1.5)
+    private func settingsContent(_ profile: Profile) -> some View {
+        VStack(spacing: 22) {
+            ProfileSettingsSection(title: "プロフィール") {
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    ProfileSettingsRow(
+                        title: "プロフィール画像変更",
+                        systemImage: "photo.fill"
+                    )
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 18))
+                .buttonStyle(.plain)
+
+                if profile.avatarKey != nil || store.avatarData != nil {
+                    ProfileSettingsDivider()
+
+                    Button {
+                        isShowingAvatarDeleteConfirmation = true
+                    } label: {
+                        ProfileSettingsRow(
+                            title: "画像を削除",
+                            systemImage: "trash",
+                            tint: .red,
+                            showsChevron: false,
+                            isDestructive: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.isAvatarSaving)
+                }
+
+                ProfileSettingsDivider()
+
+                Button {
+                    isShowingNameEditor = true
+                } label: {
+                    ProfileSettingsRow(
+                        title: "表示名変更",
+                        systemImage: "pencil"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            ProfileSettingsSection(title: "つながり") {
+                NavigationLink {
+                    FriendListView(
+                        store: friendStore,
+                        profile: profile,
+                        clipboard: clipboard
+                    )
+                } label: {
+                    ProfileSettingsRow(
+                        title: "フレンド",
+                        systemImage: "person.2.fill",
+                        detail: "\(friendStore.friends.count)人"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            ProfileSettingsSection(title: "アカウント") {
+                Button {
+                    isShowingLogoutConfirmation = true
+                } label: {
+                    ProfileSettingsRow(
+                        title: isAuthLoading ? "ログアウト中…" : "ログアウト",
+                        systemImage: "rectangle.portrait.and.arrow.right",
+                        tint: .red,
+                        showsChevron: false,
+                        isDestructive: true
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isAuthLoading)
+            }
+
+            supportSection
+            appSection
+        }
+    }
+
+    private var supportSection: some View {
+        ProfileSettingsSection(title: "サポート") {
+            informationLink(
+                title: "お問い合わせ",
+                systemImage: "envelope.fill",
+                message: "お問い合わせ窓口は現在準備中です。もうしばらくお待ちください。"
+            )
+            ProfileSettingsDivider()
+            informationLink(
+                title: "利用規約",
+                systemImage: "doc.text.fill",
+                message: "利用規約は正式公開までに、この画面から確認できるようになります。"
+            )
+            ProfileSettingsDivider()
+            informationLink(
+                title: "プライバシーポリシー",
+                systemImage: "hand.raised.fill",
+                message: "プライバシーポリシーは正式公開までに、この画面から確認できるようになります。"
+            )
+        }
+    }
+
+    private var appSection: some View {
+        ProfileSettingsSection(title: "アプリ") {
+            ProfileSettingsRow(
+                title: "バージョン",
+                systemImage: "info.circle.fill",
+                detail: appVersion,
+                showsChevron: false
+            )
+            ProfileSettingsDivider()
+            informationLink(
+                title: "ライセンス",
+                systemImage: "checkmark.seal.fill",
+                message: "アプリで利用しているライセンス情報を、正式公開までに掲載します。"
+            )
+        }
+    }
+
+    private func informationLink(
+        title: String,
+        systemImage: String,
+        message: String
+    ) -> some View {
+        NavigationLink {
+            ProfileInformationView(title: title, message: message)
+        } label: {
+            ProfileSettingsRow(title: title, systemImage: systemImage)
         }
         .buttonStyle(.plain)
-        .disabled(isAuthLoading)
+    }
+
+    private var loadingContent: some View {
+        VStack(spacing: 16) {
+            Image("cat_default")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 124, height: 104)
+                .accessibilityHidden(true)
+            ProgressView().tint(AppColors.primary)
+            Text("あなたのお部屋を準備しています…")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(.vertical, 80)
+    }
+
+    private var unavailableContent: some View {
+        VStack(spacing: 16) {
+            Image("cat_sad")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 132, height: 112)
+                .accessibilityHidden(true)
+            Text(store.error == nil
+                 ? "プロフィールがまだありません"
+                 : "プロフィールを読み込めませんでした")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.textPrimary)
+            Text("もう一度読み込むと、表示できることがあります")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
+            Button("もう一度読み込む") {
+                Task { await store.reloadProfile() }
+            }
+            .font(.system(size: 15, weight: .bold, design: .rounded))
+            .foregroundStyle(AppColors.primaryDark)
+            .padding(.horizontal, 20)
+            .frame(height: 46)
+            .background(AppColors.primarySoft)
+            .clipShape(Capsule())
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 72)
+    }
+
+    private var inlineProfileError: some View {
+        inlineError(
+            message: store.error?.localizedDescription
+                ?? "プロフィールを更新できませんでした"
+        ) {
+            store.clearError()
+        }
+    }
+
+    private var inlineAvatarError: some View {
+        inlineError(
+            message: store.avatarError?.localizedDescription
+                ?? "プロフィール画像を更新できませんでした"
+        ) {
+            store.clearAvatarError()
+        }
+    }
+
+    private func inlineError(
+        message: String,
+        onClose: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image("cat_sad")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 44)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button("閉じる", action: onClose)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.primaryDark)
+        }
+        .padding(14)
+        .background(AppColors.pastelPink.opacity(0.42))
+        .clipShape(RoundedRectangle(cornerRadius: 17))
+    }
+
+    @ViewBuilder
+    private var feedbackOverlay: some View {
+        if showsCopyMessage {
+            feedbackCapsule(image: "cat_happy", message: "コピーしました！")
+        } else if showsAvatarMessage {
+            feedbackCapsule(
+                image: "cat_happy",
+                message: store.avatarFeedback == .removed
+                    ? "プロフィール画像を削除しました！"
+                    : "プロフィール画像を更新しました！"
+            )
+        }
+    }
+
+    private func feedbackCapsule(image: String, message: String) -> some View {
+        HStack(spacing: 10) {
+            Image(image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 42, height: 38)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.primaryDark)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .background(AppColors.cardBackground)
+        .clipShape(Capsule())
+        .overlay { Capsule().stroke(AppColors.border, lineWidth: 1) }
+        .shadow(color: AppColors.shadow, radius: 9, y: 4)
+        .padding(.bottom, 92)
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+    }
+
+    @ViewBuilder
+    private var deepLinkDestination: some View {
+        switch deepLink {
+        case let .incomingFriendRequest(id):
+            FriendRequestDetailView(requestID: id, store: friendStore)
+        case let .friend(id):
+            FriendDetailView(friendID: id, store: friendStore)
+        default:
+            ContentUnavailableView(
+                "対象の情報を表示できません",
+                systemImage: "exclamationmark.triangle"
+            )
+        }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String ?? "1.0"
+    }
+
+    private func loadSelectedPhoto(_ item: PhotosPickerItem) async {
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                throw AppError.profileAvatarInvalid
+            }
+            await store.prepareAvatar(from: data)
+        } catch {
+            store.reportAvatarSelectionError(error)
+        }
     }
 
     private func copyFriendCode(_ friendCode: String) {
         clipboard.copy(friendCode)
-
         withAnimation(.easeInOut(duration: 0.2)) {
             showsCopyMessage = true
         }
-
         Task {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(1.8))
             withAnimation(.easeInOut(duration: 0.2)) {
                 showsCopyMessage = false
             }
         }
     }
+
+    private func showAvatarFeedbackIfNeeded() {
+        guard store.avatarFeedback != nil else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showsAvatarMessage = true
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showsAvatarMessage = false
+            }
+            store.clearAvatarFeedback()
+        }
+    }
 }
 
-#Preview("マイページ") {
-    let profile = Profile.preview
+#Preview("画像未設定") {
+    ProfilePreviewFactory.make()
+}
 
-    ProfileView(
-        store: ProfileStore(
-            repository: InMemoryProfileRepository(profile: profile),
-            profile: profile,
-            isLoading: false
-        ),
-        friendStore: FriendStore(repository: InMemoryFriendRepository()),
-        email: "preview@example.com",
-        isAuthLoading: false,
-        clipboard: PreviewClipboardService(),
-        onLogout: {}
+#Preview("画像設定済み") {
+    ProfilePreviewFactory.make(avatarData: ProfilePreviewFactory.sampleAvatarData)
+}
+
+#Preview("画像読込中") {
+    ProfilePreviewFactory.make(isAvatarLoading: true)
+}
+
+#Preview("アップロード中") {
+    ProfilePreviewFactory.make(
+        pendingAvatarData: ProfilePreviewFactory.sampleAvatarData,
+        isAvatarSaving: true
     )
+}
+
+#Preview("アップロード成功") {
+    ProfilePreviewFactory.make(
+        avatarData: ProfilePreviewFactory.sampleAvatarData,
+        avatarFeedback: .saved
+    )
+}
+
+#Preview("アップロード失敗") {
+    ProfilePreviewFactory.make(
+        avatarError: .profileAvatarUploadFailed
+    )
+}
+
+#Preview("画像削除確認") {
+    ProfilePreviewFactory.make(
+        profile: ProfilePreviewFactory.profileWithAvatar,
+        avatarData: ProfilePreviewFactory.sampleAvatarData,
+        showsAvatarDeleteConfirmationInitially: true
+    )
+}
+
+#Preview("長い表示名") {
+    ProfilePreviewFactory.make(
+        profile: Profile(
+            id: UUID(),
+            displayName: "こころチケットが大好きなやまもとさん",
+            friendCode: "KRTK7M2P",
+            avatarKey: nil,
+            createdAt: .now,
+            updatedAt: .now
+        )
+    )
+}
+
+#Preview("Dark Mode") {
+    ProfilePreviewFactory.make()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("iPhone SE", traits: .fixedLayout(width: 375, height: 667)) {
+    ProfilePreviewFactory.make()
+}
+
+@MainActor
+private enum ProfilePreviewFactory {
+    static var profileWithAvatar: Profile {
+        var profile = Profile.preview
+        profile.avatarKey = "\(profile.id.uuidString.lowercased())/avatar-preview.jpg"
+        return profile
+    }
+
+    static var sampleAvatarData: Data? {
+        let renderer = UIGraphicsImageRenderer(
+            size: CGSize(width: 320, height: 320)
+        )
+        return renderer.image { context in
+            UIColor.systemTeal.setFill()
+            context.cgContext.fill(
+                CGRect(x: 0, y: 0, width: 320, height: 320)
+            )
+            let symbol = UIImage(
+                systemName: "person.fill",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 150)
+            )?.withTintColor(.white, renderingMode: .alwaysOriginal)
+            symbol?.draw(in: CGRect(x: 85, y: 85, width: 150, height: 150))
+        }
+        .jpegData(compressionQuality: 0.8)
+    }
+
+    static func make(
+        profile: Profile? = .preview,
+        avatarData: Data? = nil,
+        pendingAvatarData: Data? = nil,
+        isAvatarLoading: Bool = false,
+        isAvatarSaving: Bool = false,
+        avatarError: AppError? = nil,
+        avatarFeedback: ProfileAvatarFeedback? = nil,
+        showsAvatarDeleteConfirmationInitially: Bool = false
+    ) -> some View {
+        let profileStore = ProfileStore(
+            repository: InMemoryProfileRepository(
+                profile: profile,
+                avatarData: avatarData
+            ),
+            profile: profile,
+            isLoading: false,
+            avatarData: avatarData,
+            pendingAvatarData: pendingAvatarData,
+            isAvatarLoading: isAvatarLoading,
+            isAvatarSaving: isAvatarSaving,
+            avatarError: avatarError,
+            avatarFeedback: avatarFeedback
+        )
+
+        return ProfileView(
+            store: profileStore,
+            friendStore: FriendStore(
+                repository: InMemoryFriendRepository(friends: MockFriends.items)
+            ),
+            email: "preview@example.com",
+            isAuthLoading: false,
+            clipboard: PreviewClipboardService(),
+            showsAvatarDeleteConfirmationInitially: showsAvatarDeleteConfirmationInitially,
+            onLogout: {}
+        )
+    }
 }
