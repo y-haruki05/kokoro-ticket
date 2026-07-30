@@ -128,14 +128,20 @@ struct ProfileView: View {
     }
 
     private func profileHeader(_ profile: Profile) -> some View {
-        VStack(spacing: 11) {
+        let avatarData = store.pendingAvatarData ?? store.avatarData
+        let isAvatarLoading = store.isAvatarLoading || store.isAvatarSaving
+
+        return VStack(spacing: 11) {
             PhotosPicker(
                 selection: $selectedPhoto,
                 matching: .images,
                 photoLibrary: .shared()
             ) {
                 ZStack(alignment: .bottomTrailing) {
-                    avatarImage
+                    ProfileAvatarImageView(
+                        data: avatarData,
+                        isLoading: isAvatarLoading
+                    )
                         .frame(width: 106, height: 106)
                         .clipShape(Circle())
                         .overlay {
@@ -193,33 +199,6 @@ struct ProfileView: View {
                 .stroke(AppColors.border, lineWidth: 1.2)
         }
         .shadow(color: AppColors.shadow, radius: 12, y: 5)
-    }
-
-    @ViewBuilder
-    private var avatarImage: some View {
-        ZStack {
-            AppColors.primarySoft
-
-            if let data = store.pendingAvatarData ?? store.avatarData,
-               let image = UIImage(data: data) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image("cat_default")
-                    .resizable()
-                    .scaledToFit()
-                    .padding(7)
-                    .accessibilityHidden(true)
-            }
-
-            if store.isAvatarLoading || store.isAvatarSaving {
-                Color.white.opacity(0.72)
-                ProgressView()
-                    .tint(AppColors.primaryDark)
-            }
-        }
-        .clipped()
     }
 
     private func friendCodeView(_ friendCode: String) -> some View {
@@ -633,6 +612,40 @@ struct ProfileView: View {
             }
             store.clearAvatarFeedback()
         }
+    }
+}
+
+private struct ProfileAvatarImageView: View {
+    let data: Data?
+    let isLoading: Bool
+
+    var body: some View {
+        ZStack {
+            AppColors.primarySoft
+
+            if let data, let image = UIImage(data: data) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .accessibilityLabel("プロフィール画像")
+            } else {
+                Image("cat_default")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(7)
+                    .accessibilityLabel("プロフィール画像は未設定です")
+            }
+
+            if isLoading {
+                ProgressView()
+                    .tint(AppColors.primaryDark)
+                    .padding(12)
+                    .background(AppColors.cardBackground)
+                    .clipShape(Circle())
+                    .accessibilityLabel("プロフィール画像を読み込み中")
+            }
+        }
+        .clipped()
     }
 }
 

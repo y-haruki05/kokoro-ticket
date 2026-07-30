@@ -96,7 +96,10 @@ struct TicketFriendSelectionView: View {
                 showsConfirmation = true
             }
             .padding(20)
-            .background(.ultraThinMaterial)
+            .background(AppColors.cardBackground)
+            .overlay(alignment: .top) {
+                Divider().overlay(AppColors.divider)
+            }
         }
     }
 
@@ -194,7 +197,10 @@ struct TicketFriendSelectionView: View {
                 }
             }
             .padding(20)
-            .background(.ultraThinMaterial)
+            .background(AppColors.cardBackground)
+            .overlay(alignment: .top) {
+                Divider().overlay(AppColors.divider)
+            }
         }
     }
 }

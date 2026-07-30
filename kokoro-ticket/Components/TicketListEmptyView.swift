@@ -5,36 +5,13 @@ struct TicketListEmptyView: View {
     let onCreateTicket: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 124, height: 104)
-                .accessibilityHidden(true)
-
-            Text(message)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-                .multilineTextAlignment(.center)
-
-            if status == .draft {
-                Button(action: onCreateTicket) {
-                    Text("チケットを作る")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(AppColors.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 17))
-                        .contentShape(RoundedRectangle(cornerRadius: 17))
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: 230)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
-        .padding(.vertical, 62)
+        AppEmptyStateView(
+            imageName: assetName,
+            title: message,
+            message: guidance,
+            buttonTitle: status == .draft ? "チケットを作る" : nil,
+            action: onCreateTicket
+        )
     }
 
     private var assetName: String {
@@ -55,6 +32,10 @@ struct TicketListEmptyView: View {
         case .requested: "対応待ちのチケットはありません"
         case .completed: "まだ完了したチケットはありません"
         }
+    }
+
+    private var guidance: String? {
+        status == .draft ? "大切な人へ気持ちを届けてみよう" : nil
     }
 }
 

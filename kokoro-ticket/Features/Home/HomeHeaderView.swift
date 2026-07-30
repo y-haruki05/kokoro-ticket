@@ -7,7 +7,7 @@ struct HomeHeaderView: View {
     var body: some View {
         ZStack {
             Text("こころチケット")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.primary)
 
             HStack {
@@ -28,13 +28,14 @@ struct HomeHeaderView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 5)
                                 .frame(minWidth: 19, minHeight: 19)
-                                .background(.red)
+                                .background(AppColors.error)
                                 .clipShape(Capsule())
                                 .offset(x: 4, y: -3)
                         }
                     }
                 }
                 .accessibilityLabel("通知、未読\(unreadCount)件")
+                .accessibilityHint("通知一覧を開きます")
             }
         }
         .frame(maxWidth: .infinity)

@@ -288,13 +288,14 @@ private struct AppTabBar: View {
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(tab.rawValue)
+                .accessibilityHint("タブを切り替えます")
                 .accessibilityAddTraits(selection == tab ? .isSelected : [])
             }
         }
         .padding(.horizontal, 8)
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .background(.ultraThinMaterial)
+        .background(AppColors.cardBackground)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(AppColors.border.opacity(0.55))

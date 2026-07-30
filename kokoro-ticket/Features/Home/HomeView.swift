@@ -45,7 +45,7 @@ struct HomeView: View {
         .refreshable {
             await refresh()
         }
-        .background(Color.white.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $showsNotifications) {
             NotificationListView(
@@ -75,9 +75,7 @@ struct HomeView: View {
 
     private var mainTicketSection: some View {
         VStack(alignment: .leading, spacing: 11) {
-            Text("今日のこころチケット")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
+            AppSectionHeader(title: "今日のこころチケット")
 
             if let ticket = featuredTicket {
                 NavigationLink(value: HomeDestination.ticket(ticket.id)) {
@@ -92,19 +90,11 @@ struct HomeView: View {
 
     private var receivedTicketsSection: some View {
         VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                Text("受け取ったチケット")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Spacer()
-
-                Button("すべて見る") {
+            AppSectionHeader(
+                title: "受け取ったチケット",
+                actionTitle: "すべて見る"
+            ) {
                     onOpenTickets(.received)
-                }
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-                .frame(minHeight: 44)
             }
 
             if receivedTickets.isEmpty {

@@ -37,7 +37,10 @@ struct TicketCreationNavigationButtons: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
-        .background(.ultraThinMaterial)
+        .background(AppColors.cardBackground)
+        .overlay(alignment: .top) {
+            Divider().overlay(AppColors.divider)
+        }
     }
 
     private func buttonLabel(

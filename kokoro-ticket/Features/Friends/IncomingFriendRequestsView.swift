@@ -33,8 +33,7 @@ struct IncomingFriendRequestsView: View {
                     .foregroundStyle(AppColors.textPrimary)
             }
         }
-        .toolbarBackground(AppColors.background, for: .navigationBar)
-        .toolbarColorScheme(.light, for: .navigationBar)
+        .appNavigationStyle()
         .friendErrorAlert(store: store)
         .overlay(alignment: .bottom) {
             requestFeedback

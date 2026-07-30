@@ -46,11 +46,11 @@ struct AuthenticationFormField: View {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(minHeight: 58)
+            .frame(minHeight: AppLayout.buttonHeight)
             .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .clipShape(RoundedRectangle(cornerRadius: AppLayout.controlCornerRadius))
             .overlay {
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: AppLayout.controlCornerRadius)
                     .stroke(AppColors.border, lineWidth: 1.2)
             }
             .shadow(color: AppColors.shadow.opacity(0.7), radius: 7, y: 3)

@@ -43,7 +43,7 @@ struct MemoriesView: View {
     private var header: some View {
         VStack(spacing: 5) {
             Text("思い出")
-                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.primary)
 
             Text("\(completedTickets.count)件の思い出があります")
@@ -162,43 +162,21 @@ struct MemoriesView: View {
     }
 
     private var memoriesLoading: some View {
-        VStack(spacing: 14) {
-            ProgressView()
-                .tint(AppColors.primary)
-            Text("思い出をひらいています")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 90)
+        AppLoadingView(message: "思い出をひらいています")
+            .padding(.top, 34)
     }
 
     private func memoriesError(_ error: AppError) -> some View {
-        VStack(spacing: 14) {
-            Image("cat_sad")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 112, height: 112)
-            Text("思い出を読み込めませんでした")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-            Text(error.localizedDescription)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-            Button("もう一度読み込む") {
-                Task { await store.reloadCompletedTickets() }
+        AppErrorStateView(
+            title: "思い出を読み込めませんでした",
+            message: error.localizedDescription,
+            retryTitle: "もう一度読み込む"
+        ) {
+            Task {
+                await store.reloadCompletedTickets()
             }
-            .font(.system(size: 14, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 24)
-            .frame(height: 46)
-            .background(AppColors.primary)
-            .clipShape(Capsule())
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 44)
+        .padding(.top, 4)
     }
 
     private var completedTickets: [TicketListItem] {

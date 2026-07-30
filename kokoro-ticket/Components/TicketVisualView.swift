@@ -149,7 +149,7 @@ struct TicketVisualView: View {
                             ? .system(.caption, design: .rounded, weight: .medium)
                             : .system(.caption2, design: .rounded, weight: .medium)
                     )
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.ticketTextSecondary)
                     .lineLimit(size == .large ? 3 : 2)
 
                 if senderName != nil || date != nil {
@@ -164,7 +164,7 @@ struct TicketVisualView: View {
                         }
                     }
                     .font(.system(.caption2, design: .rounded, weight: .semibold))
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.ticketTextSecondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

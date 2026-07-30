@@ -23,7 +23,7 @@ struct FriendAvatarView: View {
             }
 
             if isLoading {
-                Circle().fill(Color.white.opacity(0.78))
+                Circle().fill(AppColors.cardBackground)
                 ProgressView()
                     .tint(AppColors.primaryDark)
             }

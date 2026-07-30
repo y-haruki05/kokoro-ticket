@@ -134,13 +134,13 @@ final class SupabaseProfileRepository: ProfileRepository {
         do {
             let updated = try await updateAvatarKey(newKey, userID: userID)
             if let oldKey, oldKey != newKey {
-                try? await client.storage
+                _ = try? await client.storage
                     .from(Self.avatarBucket)
                     .remove(paths: [oldKey])
             }
             return updated
         } catch {
-            try? await client.storage
+            _ = try? await client.storage
                 .from(Self.avatarBucket)
                 .remove(paths: [newKey])
             throw error
