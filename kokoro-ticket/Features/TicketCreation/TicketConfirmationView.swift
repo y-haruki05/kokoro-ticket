@@ -3,11 +3,12 @@ import SwiftUI
 struct TicketConfirmationView: View {
     let draft: TicketCreationDraft
     let onBack: () -> Void
-    var onSave: (TicketCreationDraftSnapshot) -> Void = { _ in }
+    var onSave: (TicketCreationDraftSnapshot) -> Bool = { _ in true }
     var onSaveCompleted: () -> Void = {}
 
     @State private var isSaving = false
     @State private var isShowingSaveConfirmation = false
+    @State private var isShowingSaveError = false
 
     var body: some View {
         ScrollView {
@@ -38,7 +39,8 @@ struct TicketConfirmationView: View {
             TicketCreationNavigationButtons(
                 primaryTitle: "保存する",
                 onBack: onBack,
-                onNext: saveTicket
+                onNext: saveTicket,
+                isPrimaryDisabled: isSaving
             )
         }
         .overlay {
@@ -46,6 +48,18 @@ struct TicketConfirmationView: View {
                 TicketCreationSaveSuccessView()
                     .transition(.opacity)
                     .accessibilityAddTraits(.isStaticText)
+            } else if isShowingSaveError {
+                TicketCreationFeedbackView(
+                    imageName: "cat_sad",
+                    title: "保存できませんでした",
+                    message: "入力内容はそのままです。もう一度お試しください。"
+                )
+                .transition(.opacity)
+                .onTapGesture {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isShowingSaveError = false
+                    }
+                }
             }
         }
     }
@@ -53,7 +67,15 @@ struct TicketConfirmationView: View {
     private func saveTicket() {
         guard !isSaving else { return }
         isSaving = true
-        onSave(draft.snapshot)
+        isShowingSaveError = false
+
+        guard onSave(draft.snapshot) else {
+            isSaving = false
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isShowingSaveError = true
+            }
+            return
+        }
 
         withAnimation(.easeInOut(duration: 0.2)) {
             isShowingSaveConfirmation = true
@@ -99,6 +121,16 @@ struct TicketCreationSaveSuccessView: View {
         TicketConfirmationView(
             draft: .preview,
             onBack: {}
+        )
+    }
+}
+
+#Preview("保存失敗") {
+    NavigationStack {
+        TicketConfirmationView(
+            draft: .preview,
+            onBack: {},
+            onSave: { _ in false }
         )
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TicketCreationFlowView: View {
-    var onSave: (TicketCreationDraftSnapshot) -> Void = { _ in }
+    var onSave: (TicketCreationDraftSnapshot) -> Bool = { _ in true }
     let onClose: () -> Void
 
     @State private var path: [TicketCreationRoute] = []

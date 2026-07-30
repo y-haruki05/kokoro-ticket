@@ -4,19 +4,42 @@ import SwiftData
 @MainActor
 final class SwiftDataTicketRepository: TicketRepository {
     private let modelContext: ModelContext
+    private let currentUserID: () -> UUID?
 
-    init(modelContext: ModelContext) {
+    init(
+        modelContext: ModelContext,
+        currentUserID: @escaping () -> UUID? = { nil }
+    ) {
         self.modelContext = modelContext
+        self.currentUserID = currentUserID
     }
 
     func fetchAll() throws -> [Ticket] {
+        guard let ownerID = currentUserID() else {
+            return []
+        }
         let descriptor = FetchDescriptor<Ticket>(
+            predicate: #Predicate { ticket in
+                ticket.ownerID == ownerID || ticket.ownerID == nil
+            },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
-        return try modelContext.fetch(descriptor)
+        let tickets = try modelContext.fetch(descriptor)
+        let legacyTickets = tickets.filter { $0.ownerID == nil }
+
+        if !legacyTickets.isEmpty {
+            legacyTickets.forEach { $0.ownerID = ownerID }
+            try modelContext.save()
+        }
+
+        return tickets
     }
 
     func insert(_ ticket: Ticket) throws {
+        guard let ownerID = currentUserID() else {
+            throw AppError.authenticatedUserUnavailable
+        }
+        ticket.ownerID = ownerID
         modelContext.insert(ticket)
         try modelContext.save()
     }
@@ -119,10 +142,13 @@ final class SwiftDataTicketRepository: TicketRepository {
     }
 
     private func fetchTicket(id: UUID) throws -> Ticket {
+        guard let ownerID = currentUserID() else {
+            throw AppError.authenticatedUserUnavailable
+        }
         let ticketID = id
         let descriptor = FetchDescriptor<Ticket>(
             predicate: #Predicate { ticket in
-                ticket.id == ticketID
+                ticket.id == ticketID && ticket.ownerID == ownerID
             }
         )
 
