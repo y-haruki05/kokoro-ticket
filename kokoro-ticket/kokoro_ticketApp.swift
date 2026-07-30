@@ -76,7 +76,10 @@ struct kokoro_ticketApp: App {
                 ),
                 ticketRepository: SupabaseTicketRepository(
                     localRepository: SwiftDataTicketRepository(
-                        modelContext: modelContainer.mainContext
+                        modelContext: modelContainer.mainContext,
+                        currentUserID: {
+                            supabaseClientProvider.client.auth.currentUser?.id
+                        }
                     ),
                     clientProvider: supabaseClientProvider
                 ),

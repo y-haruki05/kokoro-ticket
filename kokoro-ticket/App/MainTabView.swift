@@ -31,7 +31,10 @@ struct MainTabView: View {
         realtimeService: (any RealtimeService)? = nil,
         onLogout: @escaping () -> Void = {}
     ) {
-        let ticketStore = TicketStore(repository: repository)
+        let ticketStore = TicketStore(
+            repository: repository,
+            localSenderName: profileStore.profile?.displayName ?? "あなた"
+        )
         let friendStore = FriendStore(repository: friendRepository)
         let notificationStore = NotificationStore(repository: notificationRepository)
         _ticketStore = State(
@@ -102,7 +105,7 @@ struct MainTabView: View {
 
                 TicketCreationFlowView(
                     onSave: { ticket in
-                        _ = ticketStore.add(savedTicket: ticket)
+                        ticketStore.add(savedTicket: ticket)
                     },
                     onClose: {
                         selection = .home

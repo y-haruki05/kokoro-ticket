@@ -88,11 +88,39 @@ final class SupabaseAuthRepository: AuthRepository {
             return .network(description: urlError.localizedDescription)
         }
 
+        if let authError = error as? AuthError {
+            logger.error(
+                "\(action, privacy: .public) failed: code=\(authError.errorCode.rawValue, privacy: .public)"
+            )
+            switch authError.errorCode {
+            case .invalidCredentials:
+                return .authentication(
+                    description: "メールアドレスまたはパスワードが正しくありません"
+                )
+            case .emailNotConfirmed:
+                return .authentication(
+                    description: "メール確認が完了していません。確認メール内のリンクを開いてください"
+                )
+            case .overRequestRateLimit:
+                return .authentication(
+                    description: "短時間に操作が繰り返されました。しばらく待ってからお試しください"
+                )
+            case .invalidJWT:
+                return .authentication(
+                    description: "ログインの有効期限が切れました。もう一度ログインしてください"
+                )
+            default:
+                return .authentication(
+                    description: "\(action)に失敗しました。もう一度お試しください"
+                )
+            }
+        }
+
         logger.error(
             "\(action, privacy: .public) failed: type=\(String(reflecting: type(of: error)), privacy: .public)"
         )
         return .authentication(
-            description: "\(action)に失敗しました: \(error.localizedDescription)"
+            description: "\(action)に失敗しました。もう一度お試しください"
         )
     }
 

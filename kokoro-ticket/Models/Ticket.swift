@@ -34,6 +34,7 @@ enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
 @Model
 final class Ticket {
     @Attribute(.unique) var id: UUID
+    var ownerID: UUID?
     var ticketTitle: String
     var message: String
     var senderName: String
@@ -51,6 +52,7 @@ final class Ticket {
 
     init(
         id: UUID = UUID(),
+        ownerID: UUID? = nil,
         ticketTitle: String,
         message: String,
         senderName: String,
@@ -67,6 +69,7 @@ final class Ticket {
         completedAt: Date? = nil
     ) {
         self.id = id
+        self.ownerID = ownerID
         self.ticketTitle = ticketTitle
         self.message = message
         self.senderName = senderName

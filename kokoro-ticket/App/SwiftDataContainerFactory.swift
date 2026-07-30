@@ -3,7 +3,7 @@ import OSLog
 import SwiftData
 
 enum SwiftDataContainerFactory {
-    private static let currentSchemaVersion = 2
+    private static let currentSchemaVersion = 3
     private static let schemaVersionKey = "SwiftDataTicketSchemaVersion"
     private static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.haruki.kokoro-ticket",
