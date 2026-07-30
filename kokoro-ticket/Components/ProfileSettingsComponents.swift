@@ -12,7 +12,8 @@ struct ProfileSettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppTypography.body)
+                .fontWeight(.bold)
                 .foregroundStyle(AppColors.textPrimary)
                 .padding(.leading, 4)
 
@@ -20,9 +21,9 @@ struct ProfileSettingsSection<Content: View>: View {
                 content
             }
             .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cardCornerRadius))
             .overlay {
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: AppLayout.cardCornerRadius)
                     .stroke(AppColors.border.opacity(0.85), lineWidth: 1)
             }
             .shadow(color: AppColors.shadow.opacity(0.65), radius: 8, y: 4)
@@ -43,19 +44,22 @@ struct ProfileSettingsRow: View {
             Image(systemName: systemImage)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(tint)
-                .frame(width: 34, height: 34)
+                .frame(
+                    minWidth: AppLayout.minimumTapTarget,
+                    minHeight: AppLayout.minimumTapTarget
+                )
                 .background(tint.opacity(0.09))
                 .clipShape(Circle())
 
             Text(title)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(isDestructive ? Color.red : AppColors.textPrimary)
+                .font(AppTypography.body)
+                .foregroundStyle(isDestructive ? AppColors.error : AppColors.textPrimary)
 
             Spacer()
 
             if let detail {
                 Text(detail)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
             }
@@ -66,7 +70,7 @@ struct ProfileSettingsRow: View {
                     .foregroundStyle(AppColors.textSecondary.opacity(0.65))
             }
         }
-        .frame(minHeight: 54)
+        .frame(minHeight: AppLayout.buttonHeight)
         .padding(.horizontal, 16)
         .contentShape(Rectangle())
     }

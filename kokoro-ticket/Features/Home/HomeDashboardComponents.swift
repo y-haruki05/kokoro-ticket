@@ -1,9 +1,9 @@
 import SwiftUI
 
 enum HomeLayout {
-    static let horizontalPadding: CGFloat = 20
-    static let sectionSpacing: CGFloat = 22
-    static let cardCornerRadius: CGFloat = 22
+    static let horizontalPadding = AppLayout.screenHorizontalPadding
+    static let sectionSpacing = AppLayout.sectionSpacing
+    static let cardCornerRadius = AppLayout.cardCornerRadius
 }
 
 struct HomeGreetingView: View {
@@ -12,13 +12,13 @@ struct HomeGreetingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(greeting)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
 
             Text("今日はどんなきもちを届ける？")
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .font(AppTypography.body)
                 .foregroundStyle(AppColors.textSecondary)
         }
         .padding(.horizontal, 3)
@@ -82,7 +82,7 @@ struct HomeFeaturedEmptyView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(18)
-        .background(Color.white)
+        .background(AppColors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: HomeLayout.cardCornerRadius))
         .overlay {
             RoundedRectangle(cornerRadius: HomeLayout.cardCornerRadius)
@@ -123,7 +123,7 @@ struct HomeReceivedTicketsEmptyView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.white)
+        .background(AppColors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
@@ -134,15 +134,8 @@ struct HomeReceivedTicketsEmptyView: View {
 
 struct HomeLoadingView: View {
     var body: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .tint(AppColors.primary)
-            Text("ホームを準備しています")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 210)
+        AppLoadingView(message: "ホームを準備しています")
+            .frame(minHeight: 210)
     }
 }
 
@@ -150,30 +143,15 @@ struct HomeErrorCard: View {
     let retry: () async -> Void
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image("cat_sad")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 68)
-
-            Text("最新の情報を読み込めませんでした")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-
-            Button("もう一度読み込む") {
-                Task { await retry() }
+        AppErrorStateView(
+            title: "最新の情報を読み込めませんでした",
+            message: "通信状態を確認して、もう一度お試しください",
+            retryTitle: "もう一度読み込む"
+        ) {
+            Task {
+                await retry()
             }
-            .font(.system(size: 13, weight: .bold, design: .rounded))
-            .foregroundStyle(AppColors.primaryDark)
-            .frame(minHeight: 44)
         }
-        .frame(maxWidth: .infinity)
-        .padding(15)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(AppColors.border, lineWidth: 1)
-        }
+        .appCard(padding: 0)
     }
 }

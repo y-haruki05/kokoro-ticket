@@ -28,8 +28,7 @@ struct FriendSearchView: View {
                     .foregroundStyle(AppColors.textPrimary)
             }
         }
-        .toolbarBackground(AppColors.background, for: .navigationBar)
-        .toolbarColorScheme(.light, for: .navigationBar)
+        .appNavigationStyle()
         .friendErrorAlert(store: store)
         .onDisappear {
             store.clearSearch()

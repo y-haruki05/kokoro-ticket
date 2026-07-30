@@ -29,8 +29,7 @@ struct FriendListView: View {
                 friendNavigationTitle("フレンド")
             }
         }
-        .toolbarBackground(AppColors.background, for: .navigationBar)
-        .toolbarColorScheme(.light, for: .navigationBar)
+        .appNavigationStyle()
         .task {
             guard loadsRemoteData else { return }
             await store.reload()
@@ -347,35 +346,13 @@ struct FriendEmptyStateView: View {
     var action: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 112, height: 112)
-            Text(title)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-                .multilineTextAlignment(.center)
-            Text(message)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-
-            if let buttonTitle {
-                Button(buttonTitle, action: action)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .frame(height: 46)
-                    .background(AppColors.primary)
-                    .clipShape(Capsule())
-                    .buttonStyle(.plain)
-                    .padding(.top, 4)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        AppEmptyStateView(
+            imageName: imageName,
+            title: title,
+            message: message,
+            buttonTitle: buttonTitle,
+            action: action
+        )
     }
 }
 

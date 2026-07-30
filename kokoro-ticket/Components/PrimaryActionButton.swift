@@ -17,16 +17,9 @@ struct PrimaryActionButton: View {
                         .tint(.white)
                 }
             }
-            .font(.system(size: 17, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(AppColors.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .contentShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: AppColors.shadow, radius: 8, y: 4)
+            .accessibilityLabel(isLoading ? "\(title)、処理中" : title)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AppPrimaryButtonStyle())
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.55 : 1)
     }

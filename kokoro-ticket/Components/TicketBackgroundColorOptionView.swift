@@ -39,7 +39,7 @@ struct TicketBackgroundColorOptionView: View {
 extension TicketBackgroundColor {
     var color: Color {
         switch self {
-        case .white: AppColors.cardBackground
+        case .white: AppColors.ticketWhite
         case .lightBlue: AppColors.pastelBlue
         case .lightPink: AppColors.pastelPink
         case .lightYellow: AppColors.pastelYellow

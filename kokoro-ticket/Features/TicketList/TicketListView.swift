@@ -32,7 +32,7 @@ struct TicketListView: View {
         VStack(spacing: 0) {
             VStack(spacing: 4) {
                 Text("チケットBOX")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(AppTypography.screenTitle)
                     .foregroundStyle(AppColors.primary)
 
                 Text("大切なチケットをひらいてみよう")
@@ -61,7 +61,7 @@ struct TicketListView: View {
                         onCreateTicket: onCreateTicket
                     )
                 } else {
-                    LazyVStack(spacing: 14) {
+                    LazyVStack(spacing: AppLayout.cardSpacing) {
                         ForEach(filteredTickets) { ticket in
                             NavigationLink(value: ticket.id) {
                                 TicketListCardView(ticket: ticket)
@@ -72,7 +72,7 @@ struct TicketListView: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppLayout.screenHorizontalPadding)
                     .padding(.top, 18)
                     .padding(.bottom, 112)
                     .animation(

@@ -8,8 +8,7 @@ struct NotificationListView: View {
     var body: some View {
         Group {
             if store.isLoading && store.notifications.isEmpty {
-                ProgressView()
-                    .tint(AppColors.primary)
+                AppLoadingView(message: "通知を読み込んでいます")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if store.notifications.isEmpty {
                 emptyView
@@ -20,6 +19,7 @@ struct NotificationListView: View {
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("通知")
         .navigationBarTitleDisplayMode(.inline)
+        .appNavigationStyle()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("すべて既読") {
@@ -81,19 +81,12 @@ struct NotificationListView: View {
     }
 
     private var emptyView: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "bell")
-                .font(.system(size: 38))
-                .foregroundStyle(AppColors.primary)
-            Text("まだ通知はありません")
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-            Text("新しいお知らせが届くと、ここに表示されます")
-                .font(.system(size: 14, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-        }
+        AppEmptyStateView(
+            imageName: "cat_welcome",
+            title: "まだ通知はありません",
+            message: "新しいお知らせが届くと、ここに表示されます"
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
     }
 }
 

@@ -44,8 +44,7 @@ struct FriendRequestDetailView: View {
                     .foregroundStyle(AppColors.textPrimary)
             }
         }
-        .toolbarBackground(AppColors.background, for: .navigationBar)
-        .toolbarColorScheme(.light, for: .navigationBar)
+        .appNavigationStyle()
     }
 }
 
@@ -104,7 +103,6 @@ struct FriendDetailView: View {
                     .foregroundStyle(AppColors.textPrimary)
             }
         }
-        .toolbarBackground(AppColors.background, for: .navigationBar)
-        .toolbarColorScheme(.light, for: .navigationBar)
+        .appNavigationStyle()
     }
 }
