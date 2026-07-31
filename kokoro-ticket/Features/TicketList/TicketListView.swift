@@ -91,6 +91,10 @@ struct TicketListView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
+        .sensoryFeedback(
+            .success,
+            trigger: store.completionMessage ?? store.requestMessage ?? store.sendMessage
+        )
         .navigationDestination(for: TicketListItem.ID.self) { ticketID in
             TicketDetailView(
                 ticketID: ticketID,

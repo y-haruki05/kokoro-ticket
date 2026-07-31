@@ -93,6 +93,13 @@ final class NotificationStore {
 
     @discardableResult
     func reloadFromRealtime() async -> Bool {
+        while isLoading {
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return false
+            }
+        }
         await reload()
         return error == nil
     }

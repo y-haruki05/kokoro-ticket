@@ -104,50 +104,50 @@ struct TicketUsageAnimationView: View {
 
     @MainActor
     private func playTearSequence() async {
-        await wait(500)
+        guard await wait(500) else { return }
 
         withAnimation(.easeInOut(duration: 0.30)) {
             stretchX = 1.065
             stretchY = 0.965
         }
 
-        await wait(320)
+        guard await wait(320) else { return }
 
         isTorn = true
         stretchX = 1
         stretchY = 1
 
-        await wait(70)
+        guard await wait(70) else { return }
 
         withAnimation(.spring(response: 0.62, dampingFraction: 0.72)) {
             isLeftReleased = true
         }
 
-        await wait(100)
+        guard await wait(100) else { return }
 
         withAnimation(.spring(response: 0.66, dampingFraction: 0.74)) {
             isRightReleased = true
         }
 
-        await wait(360)
+        guard await wait(360) else { return }
 
         withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
             showsCompletionMessage = true
         }
 
-        await wait(220)
+        guard await wait(220) else { return }
 
         withAnimation(.spring(response: 0.50, dampingFraction: 0.70)) {
             showsThanks = true
         }
 
-        await wait(820)
+        guard await wait(820) else { return }
         completeOnce()
     }
 
     @MainActor
     private func playReducedMotionSequence() async {
-        await wait(400)
+        guard await wait(400) else { return }
 
         withAnimation(.easeInOut(duration: 0.25)) {
             ticketOpacity = 0.45
@@ -155,7 +155,7 @@ struct TicketUsageAnimationView: View {
             showsThanks = true
         }
 
-        await wait(1_000)
+        guard await wait(1_000) else { return }
         completeOnce()
     }
 
@@ -166,8 +166,13 @@ struct TicketUsageAnimationView: View {
         onAnimationCompleted()
     }
 
-    private func wait(_ milliseconds: UInt64) async {
-        try? await Task.sleep(nanoseconds: milliseconds * 1_000_000)
+    private func wait(_ milliseconds: UInt64) async -> Bool {
+        do {
+            try await Task.sleep(nanoseconds: milliseconds * 1_000_000)
+            return !Task.isCancelled
+        } catch {
+            return false
+        }
     }
 }
 

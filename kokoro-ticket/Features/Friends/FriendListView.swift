@@ -30,6 +30,7 @@ struct FriendListView: View {
             }
         }
         .appNavigationStyle()
+        .sensoryFeedback(.success, trigger: store.requestMessage)
         .task {
             guard loadsRemoteData else { return }
             await store.reload()

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -24,6 +25,11 @@ final class ProfileStore {
     private let repository: any ProfileRepository
     @ObservationIgnored
     private let imageProcessor: any ProfileImageProcessing
+    @ObservationIgnored
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "kokoro-ticket",
+        category: "ProfileStore"
+    )
 
     init(
         repository: any ProfileRepository,
@@ -253,9 +259,8 @@ final class ProfileStore {
             // The mutation already succeeded. Keep the returned profile and avoid
             // presenting a false save failure; the next refresh retries this read.
             #if DEBUG
-            print(
-                "[ProfileAvatar] 保存後のプロフィール再取得に失敗しました "
-                    + "type=\(String(describing: type(of: error)))"
+            logger.error(
+                "Profile refresh after avatar mutation failed: type=\(String(describing: type(of: error)), privacy: .public)"
             )
             #endif
         }

@@ -179,7 +179,11 @@ struct ProfileSetupView: View {
             withAnimation(.easeOut(duration: 0.2)) {
                 isShowingCompletion = true
             }
-            try? await Task.sleep(for: .milliseconds(900))
+            do {
+                try await Task.sleep(for: .milliseconds(900))
+            } catch {
+                return
+            }
             onCompletionStateChange(false)
         }
     }

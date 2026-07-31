@@ -41,10 +41,14 @@ final class RealtimeSyncCoordinator {
     }
 
     func start(userID: UUID) async {
-        guard subscribedUserID != userID || !isConnected else {
-            await refreshAll()
+        if subscribedUserID == userID, isConnected || isConnecting {
             return
         }
+
+        if let subscribedUserID, subscribedUserID != userID {
+            await stop()
+        }
+
         retryTask?.cancel()
         subscribedUserID = userID
         await connect(userID: userID, attempt: 0)
@@ -63,8 +67,11 @@ final class RealtimeSyncCoordinator {
     }
 
     func resume(userID: UUID) async {
-        await start(userID: userID)
-        await refreshAll()
+        if subscribedUserID == userID, isConnected {
+            await refreshAll()
+        } else {
+            await start(userID: userID)
+        }
     }
 
     func refreshAll() async {
@@ -73,6 +80,8 @@ final class RealtimeSyncCoordinator {
         let notificationsSucceeded = await notificationStore.reloadFromRealtime()
         if !friendsSucceeded || !ticketsSucceeded || !notificationsSucceeded {
             connectionError = .realtimeRefreshFailed
+        } else {
+            connectionError = nil
         }
     }
 

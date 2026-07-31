@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Supabase
 
 @MainActor
@@ -8,6 +9,10 @@ final class SupabaseProfileRepository: ProfileRepository {
     private let client: Supabase.SupabaseClient
     private let generator: FriendCodeGenerator
     private let maximumCodeGenerationAttempts: Int
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "kokoro-ticket",
+        category: "ProfileRepository"
+    )
 
     init(
         clientProvider: any SupabaseClientProviding,
@@ -228,7 +233,7 @@ final class SupabaseProfileRepository: ProfileRepository {
         if isUniqueConstraintViolation(error) {
             return .friendCodeDuplicated
         }
-        return .profile(description: "\(action)に失敗しました: \(error.localizedDescription)")
+        return .profile(description: "\(action)に失敗しました")
     }
 
     private func mapAvatar(_ error: Error, action: String) -> AppError {
@@ -282,25 +287,26 @@ final class SupabaseProfileRepository: ProfileRepository {
 
     private func logAvatarCleanupFailure(_ error: Error) {
         #if DEBUG
-        print("[ProfileAvatar] 古い画像の削除に失敗しました: \(type(of: error))")
+        logger.error(
+            "Avatar cleanup failed: type=\(String(describing: type(of: error)), privacy: .public)"
+        )
         #endif
     }
 
     private func logAvatarFailure(_ error: Error, action: String) {
         #if DEBUG
         if let storageError = error as? StorageError {
-            print(
+            logger.error(
                 """
-                [ProfileAvatar] \(action)失敗 \
-                type=StorageError \
-                status=\(storageError.statusCode ?? "unknown") \
-                code=\(storageError.error ?? "unknown") \
-                message=\(sanitizedStorageLogMessage(storageError.message))
+                \(action, privacy: .public) failed: type=StorageError \
+                status=\(storageError.statusCode ?? "unknown", privacy: .public) \
+                code=\(storageError.error ?? "unknown", privacy: .public) \
+                message=\(self.sanitizedStorageLogMessage(storageError.message), privacy: .public)
                 """
             )
         } else {
-            print(
-                "[ProfileAvatar] \(action)失敗 type=\(String(describing: type(of: error)))"
+            logger.error(
+                "\(action, privacy: .public) failed: type=\(String(describing: type(of: error)), privacy: .public)"
             )
         }
         #endif

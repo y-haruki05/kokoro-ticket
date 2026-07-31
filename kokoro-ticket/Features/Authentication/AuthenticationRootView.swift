@@ -56,7 +56,11 @@ struct AuthenticationRootView: View {
         }
         .task {
             guard !didReachSplashMinimumDuration else { return }
-            try? await Task.sleep(for: .milliseconds(900))
+            do {
+                try await Task.sleep(for: .milliseconds(900))
+            } catch {
+                return
+            }
             didReachSplashMinimumDuration = true
         }
         .task {

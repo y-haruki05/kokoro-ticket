@@ -69,10 +69,12 @@ enum SwiftDataContainerFactory {
     }
 
     private static func persistentStoreURL() throws -> URL {
-        let applicationSupportURL = FileManager.default.urls(
+        guard let applicationSupportURL = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first!
+        ).first else {
+            throw CocoaError(.fileNoSuchFile)
+        }
 
         try FileManager.default.createDirectory(
             at: applicationSupportURL,
