@@ -35,6 +35,8 @@ struct TicketConfirmationView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarHidden(true)
+        .sensoryFeedback(.success, trigger: isShowingSaveConfirmation)
+        .sensoryFeedback(.error, trigger: isShowingSaveError)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TicketCreationNavigationButtons(
                 primaryTitle: "保存する",
@@ -82,7 +84,11 @@ struct TicketConfirmationView: View {
         }
 
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 900_000_000)
+            do {
+                try await Task.sleep(nanoseconds: 900_000_000)
+            } catch {
+                return
+            }
             onSaveCompleted()
         }
     }

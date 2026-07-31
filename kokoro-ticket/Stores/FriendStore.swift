@@ -19,6 +19,14 @@ final class FriendStore {
 
     @ObservationIgnored
     private let repository: any FriendRepository
+    @ObservationIgnored
+    private let maximumAvatarCacheCount = 32
+    @ObservationIgnored
+    private let maximumAvatarCacheBytes = 12 * 1_024 * 1_024
+    @ObservationIgnored
+    private var avatarCacheOrder: [String] = []
+    @ObservationIgnored
+    private var failedAvatarPaths: Set<String> = []
 
     init(
         repository: any FriendRepository,
@@ -56,6 +64,7 @@ final class FriendStore {
             self.friends = unique(self.friends)
             incomingRequests = unique(incomingRequests)
             outgoingRequests = unique(outgoingRequests)
+            failedAvatarPaths.removeAll()
             error = nil
         } catch {
             self.error = normalize(error)
@@ -130,6 +139,9 @@ final class FriendStore {
 
     func avatarData(for path: String?) -> Data? {
         guard let path else { return nil }
+        if avatarDataByPath[path] != nil {
+            touchAvatar(path)
+        }
         return avatarDataByPath[path]
     }
 
@@ -138,14 +150,18 @@ final class FriendStore {
             let path,
             !path.isEmpty,
             avatarDataByPath[path] == nil,
-            !loadingAvatarPaths.contains(path)
+            !loadingAvatarPaths.contains(path),
+            !failedAvatarPaths.contains(path)
         else { return }
 
         loadingAvatarPaths.insert(path)
         defer { loadingAvatarPaths.remove(path) }
         do {
-            avatarDataByPath[path] = try await repository.fetchAvatarData(path: path)
+            let data = try await repository.fetchAvatarData(path: path)
+            insertAvatar(data, for: path)
+            failedAvatarPaths.remove(path)
         } catch {
+            failedAvatarPaths.insert(path)
             // Avatar failures intentionally fall back to cat_default without
             // blocking friend operations.
         }
@@ -158,10 +174,12 @@ final class FriendStore {
 
     @discardableResult
     func reloadFromRealtime() async -> Bool {
-        var attempts = 0
-        while isLoading, attempts < 5 {
-            attempts += 1
-            try? await Task.sleep(for: .milliseconds(120))
+        while isLoading {
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return false
+            }
         }
         await reload()
         return error == nil
@@ -212,5 +230,22 @@ final class FriendStore {
     where Value.ID == UUID {
         var seen = Set<UUID>()
         return values.filter { seen.insert($0.id).inserted }
+    }
+
+    private func insertAvatar(_ data: Data, for path: String) {
+        avatarDataByPath[path] = data
+        touchAvatar(path)
+
+        while avatarDataByPath.count > maximumAvatarCacheCount
+            || avatarDataByPath.values.reduce(0, { $0 + $1.count }) > maximumAvatarCacheBytes {
+            guard let oldestPath = avatarCacheOrder.first else { break }
+            avatarCacheOrder.removeFirst()
+            avatarDataByPath.removeValue(forKey: oldestPath)
+        }
+    }
+
+    private func touchAvatar(_ path: String) {
+        avatarCacheOrder.removeAll { $0 == path }
+        avatarCacheOrder.append(path)
     }
 }

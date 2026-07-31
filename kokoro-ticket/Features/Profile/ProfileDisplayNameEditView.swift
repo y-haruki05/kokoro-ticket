@@ -98,6 +98,7 @@ struct ProfileDisplayNameEditView: View {
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("表示名を変更")
             .navigationBarTitleDisplayMode(.inline)
+            .sensoryFeedback(.success, trigger: didSave)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("閉じる") { dismiss() }
@@ -153,7 +154,11 @@ struct ProfileDisplayNameEditView: View {
             withAnimation(.easeInOut(duration: 0.2)) {
                 didSave = true
             }
-            try? await Task.sleep(for: .seconds(0.9))
+            do {
+                try await Task.sleep(for: .seconds(0.9))
+            } catch {
+                return
+            }
             dismiss()
         }
     }

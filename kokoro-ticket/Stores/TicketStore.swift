@@ -356,6 +356,13 @@ final class TicketStore {
 
     @discardableResult
     func reloadFromRealtime() async -> Bool {
+        while isReloadingRemote {
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return false
+            }
+        }
         reload()
         return await reloadRemoteTickets()
     }

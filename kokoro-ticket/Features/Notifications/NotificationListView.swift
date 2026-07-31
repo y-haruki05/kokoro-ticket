@@ -134,6 +134,8 @@ private struct NotificationRow: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(AppColors.border.opacity(0.8), lineWidth: 1)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(notification.isRead ? "既読" : "未読")
     }
 }
 

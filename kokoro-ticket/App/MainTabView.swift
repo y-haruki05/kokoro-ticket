@@ -133,7 +133,7 @@ struct MainTabView: View {
                     isAuthLoading: isAuthLoading,
                     clipboard: SystemClipboardService(),
                     deepLink: $profileDeepLink,
-                    onLogout: onLogout
+                    onLogout: stopRealtimeAndLogout
                 )
                     .tag(AppTab.profile)
             }
@@ -250,6 +250,13 @@ struct MainTabView: View {
     private func pushUnique(_ id: UUID, into path: inout [UUID]) {
         if path.last != id {
             path.append(id)
+        }
+    }
+
+    private func stopRealtimeAndLogout() {
+        Task {
+            await realtimeCoordinator.stop()
+            onLogout()
         }
     }
 
