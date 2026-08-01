@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// 本人宛て通知の取得と既読更新をSupabase RPC経由で実行する
 @MainActor
 final class SupabaseNotificationRepository: NotificationRepository {
     private let client: Supabase.SupabaseClient

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+/// ログイン中ユーザーの下書きをSwiftDataへ保存し、別ユーザーのデータを分離する
 @MainActor
 final class SwiftDataTicketRepository: TicketRepository {
     private let modelContext: ModelContext
@@ -14,6 +15,7 @@ final class SwiftDataTicketRepository: TicketRepository {
         self.currentUserID = currentUserID
     }
 
+    /// ownerIDで現在ユーザーのデータだけを取得し、旧形式データは一度だけ引き継ぐ
     func fetchAll() throws -> [Ticket] {
         guard let ownerID = currentUserID() else {
             return []

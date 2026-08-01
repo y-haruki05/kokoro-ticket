@@ -1,5 +1,6 @@
 import Foundation
 
+/// Supabase RealtimeとInMemory実装を差し替えるための購読インターフェース
 @MainActor
 protocol RealtimeService: AnyObject {
     var status: RealtimeConnectionStatus { get }

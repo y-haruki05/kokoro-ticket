@@ -1,5 +1,6 @@
 import Foundation
 
+/// Realtimeイベント後に再取得すべきStoreの領域
 enum RealtimeDataArea: Sendable, Equatable {
     case friends
     case tickets

@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 主要操作ボタンの高さ・角丸・押下表現を全画面で統一するStyle
 struct AppPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

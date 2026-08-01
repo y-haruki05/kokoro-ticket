@@ -1,10 +1,13 @@
 import SwiftUI
 
+/// 内容・イラスト・デザイン・完成確認の作成ステップを管理するView
 struct TicketCreationFlowView: View {
     var onSave: (TicketCreationDraftSnapshot) -> Bool = { _ in true }
     let onClose: () -> Void
 
+    /// 作成ステップ間を進むNavigationStackの経路
     @State private var path: [TicketCreationRoute] = []
+    /// 全ステップで共有し、プレビューへ即時反映する保存前データ
     @State private var draft = TicketCreationDraft()
 
     var body: some View {

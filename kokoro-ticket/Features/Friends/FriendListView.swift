@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 自分のフレンドコード、申請状況、フレンド一覧をまとめて表示する画面
 struct FriendListView: View {
     let store: FriendStore
     let profile: Profile

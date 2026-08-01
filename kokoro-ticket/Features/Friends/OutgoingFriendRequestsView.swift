@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 自分が送信して相手の対応を待っているフレンド申請を表示する画面
 struct OutgoingFriendRequestsView: View {
     let store: FriendStore
 

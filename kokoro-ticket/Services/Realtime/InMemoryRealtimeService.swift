@@ -1,5 +1,6 @@
 import Foundation
 
+/// Previewとテストで接続状態やイベント配信を再現するRealtime実装
 @MainActor
 final class InMemoryRealtimeService: RealtimeService {
     private(set) var status: RealtimeConnectionStatus

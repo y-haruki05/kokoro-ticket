@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// 通知一覧・未読件数・ページネーション・既読状態を管理するStore
 @MainActor
 @Observable
 final class NotificationStore {
@@ -27,6 +28,7 @@ final class NotificationStore {
         self.unreadCount = unreadCount
     }
 
+    /// 通知の先頭ページと未読件数を取得し、表示を最新状態へ置き換える
     func reload() async {
         guard !isLoading else { return }
         isLoading = true
@@ -44,6 +46,7 @@ final class NotificationStore {
         }
     }
 
+    /// 一覧末尾へ近づいたときだけ次ページを取得し、ID重複を除いて追加する
     func loadMoreIfNeeded(current notification: AppNotification) async {
         guard hasMore, !isLoadingMore, notification.id == notifications.last?.id else { return }
         isLoadingMore = true

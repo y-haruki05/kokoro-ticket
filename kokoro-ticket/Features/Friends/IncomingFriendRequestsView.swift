@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 受信したフレンド申請を確認し、承認または拒否する画面
 struct IncomingFriendRequestsView: View {
     let store: FriendStore
 

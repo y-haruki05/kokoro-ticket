@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import SwiftData
 
+/// ローカルチケットを保存するSwiftDataコンテナを安全に生成・移行する
 enum SwiftDataContainerFactory {
     private static let currentSchemaVersion = 3
     private static let schemaVersionKey = "SwiftDataTicketSchemaVersion"

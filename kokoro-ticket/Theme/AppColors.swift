@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 
+/// Light／Dark Modeで共通利用するアプリの意味色を定義する
 enum AppColors {
     static let primary = Color(red: 0.30, green: 0.67, blue: 0.88)
     static let primaryDark = Color(red: 0.20, green: 0.45, blue: 0.64)

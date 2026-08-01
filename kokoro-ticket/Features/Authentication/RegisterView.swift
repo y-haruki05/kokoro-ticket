@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 新規登録の入力検証と、確認メール待ち画面への遷移を担当する画面
 struct RegisterView: View {
     let store: SessionStore
 

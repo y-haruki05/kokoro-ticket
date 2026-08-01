@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 
+/// Private Storage画像と未設定時のここにゃんを円形で表示する共通アバター
 struct FriendAvatarView: View {
     let imageData: Data?
     var isLoading = false

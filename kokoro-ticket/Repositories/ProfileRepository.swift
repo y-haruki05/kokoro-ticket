@@ -1,5 +1,6 @@
 import Foundation
 
+/// プロフィールとPrivate Storage上のアバターを操作するRepositoryの契約
 @MainActor
 protocol ProfileRepository {
     func fetchCurrentProfile() async throws -> Profile?

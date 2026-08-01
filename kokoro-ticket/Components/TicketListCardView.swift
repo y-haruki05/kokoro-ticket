@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// チケットBOX用に相手・日時・状態の補足を加えた一覧カード
 struct TicketListCardView: View {
     let ticket: TicketListItem
 

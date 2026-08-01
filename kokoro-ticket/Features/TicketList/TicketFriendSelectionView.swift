@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 下書きチケットの送信先を既存フレンドから選択する画面
 struct TicketFriendSelectionView: View {
     let ticket: TicketListItem
     let friendStore: FriendStore

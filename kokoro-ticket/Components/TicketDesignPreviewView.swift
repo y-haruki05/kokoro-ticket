@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 作成中の入力・イラスト・デザインを横長チケットへ即時反映するプレビュー
 struct TicketDesignPreviewView: View {
     let illustration: TicketIllustration?
     let content: TicketContent

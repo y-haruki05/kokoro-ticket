@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 完成したチケットを確認し、ローカル下書きとして保存する最終画面
 struct TicketConfirmationView: View {
     let draft: TicketCreationDraft
     let onBack: () -> Void

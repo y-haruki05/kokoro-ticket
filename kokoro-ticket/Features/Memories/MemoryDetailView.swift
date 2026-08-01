@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 完了したチケットと各状態遷移日時を読み取り専用で表示する画面
 struct MemoryDetailView: View {
     let ticketID: TicketListItem.ID
     let store: TicketStore

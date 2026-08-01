@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 横長チケットを表示先に応じた寸法へ調整するサイズ区分
 enum TicketVisualSize {
     case large
     case compact
@@ -70,6 +71,7 @@ struct TicketPerforationView: View {
     }
 }
 
+/// 切り欠き・本券・点線・半券を一体表示する再利用可能なチケットView
 struct TicketVisualView: View {
     let title: String
     let message: String

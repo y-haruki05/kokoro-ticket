@@ -1,5 +1,6 @@
 import Foundation
 
+/// Supabaseへ接続せずプロフィール操作を再現するInMemory実装
 @MainActor
 final class InMemoryProfileRepository: ProfileRepository {
     private let currentUserID: UUID

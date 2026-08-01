@@ -1,5 +1,6 @@
 import Observation
 
+/// 作成フローの各画面で共有する、保存前の入力内容とデザイン選択状態
 @Observable
 final class TicketCreationDraft {
     var selectedIllustration: TicketIllustration?

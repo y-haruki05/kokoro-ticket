@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 通知のページ取得・既読化と、対象詳細へのDeep Link遷移を提供する画面
 struct NotificationListView: View {
     let store: NotificationStore
     var isResolvingDeepLink = false

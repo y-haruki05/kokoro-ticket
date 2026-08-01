@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 新規登録後に確認メールの送信先と次の操作を案内する画面
 struct EmailConfirmationPendingView: View {
     let email: String
     let onReturnToLogin: () -> Void

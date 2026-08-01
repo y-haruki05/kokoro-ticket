@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// 認証ユーザー専用Channelで対象テーブルの変更を購読するRealtime実装
 @MainActor
 final class SupabaseRealtimeService: RealtimeService {
     private(set) var status: RealtimeConnectionStatus = .disconnected

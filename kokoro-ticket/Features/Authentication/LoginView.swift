@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// メールアドレスとパスワードによるログイン入力を提供する画面
 struct LoginView: View {
     let store: SessionStore
 

@@ -1,5 +1,6 @@
 import SwiftUI
 
+// スプラッシュ、セッション復元、プロフィール有無を判定して起動画面を切り替えるView
 @MainActor
 struct AuthenticationRootView: View {
     private let ticketRepository: any TicketRepository
@@ -12,6 +13,7 @@ struct AuthenticationRootView: View {
     @State private var didRestoreSession = false
     @State private var didReachSplashMinimumDuration = false
     @State private var didFinishInitialSplash = false
+    /// セッション切替時に前ユーザーのプロフィールを表示しないための読込済みID
     @State private var loadedProfileUserID: UUID?
     @State private var isCompletingProfileSetup = false
     @State private var hasCompletedTutorial: Bool
@@ -136,6 +138,7 @@ struct AuthenticationRootView: View {
         }
     }
 
+    /// 最低表示時間と初期データ準備の両方が完了するまでスプラッシュを維持する
     private var shouldShowSplash: Bool {
         guard !didFinishInitialSplash else { return false }
 

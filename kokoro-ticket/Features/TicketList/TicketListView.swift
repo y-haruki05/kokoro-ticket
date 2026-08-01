@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 保存・送受信・対応待ち・完了のカテゴリを切り替えるチケットBOX画面
 struct TicketListView: View {
     let store: TicketStore
     let friendStore: FriendStore

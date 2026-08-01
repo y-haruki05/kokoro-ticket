@@ -1,11 +1,13 @@
 import Foundation
 
+/// ローカル操作で発生する状態不整合を表すエラー
 enum TicketRepositoryError: Error {
     case ticketNotFound
     case invalidTransition(expected: TicketStatus, actual: TicketStatus)
     case remoteUnavailable
 }
 
+/// ローカル保存とリモート状態遷移を統一して扱うチケットRepositoryの契約
 @MainActor
 protocol TicketRepository {
     func fetchAll() throws -> [Ticket]

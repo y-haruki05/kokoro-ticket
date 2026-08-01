@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 初回起動とマイページ再表示の両方で使う5ページの使い方ガイド
 struct TutorialView: View {
     let mode: TutorialPresentationMode
     let onDismiss: () -> Void

@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// statusと立場に応じた送信・受取・使用・完了操作を表示する詳細画面
 struct TicketDetailView: View {
     let ticketID: TicketListItem.ID
     let store: TicketStore
@@ -8,6 +9,7 @@ struct TicketDetailView: View {
     var onTicketCompleted: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+    /// 確認ダイアログで確定待ちになっている状態遷移操作
     @State private var pendingAction: TicketDetailAction?
     @State private var isShowingFriendSelection = false
     @State private var isShowingEditor = false

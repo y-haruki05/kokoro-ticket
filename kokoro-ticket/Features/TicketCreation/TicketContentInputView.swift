@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// チケット名とひとことメッセージを入力し、文字数と必須項目を検証する画面
 struct TicketContentInputView: View {
     @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void

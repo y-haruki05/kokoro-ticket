@@ -2,6 +2,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
+// プロフィール表示・画像変更・設定項目・ログアウト導線をまとめるマイページ
 @MainActor
 struct ProfileView: View {
     let store: ProfileStore

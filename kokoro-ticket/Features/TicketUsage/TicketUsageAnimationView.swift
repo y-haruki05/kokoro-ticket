@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 完了成功後だけ半券破り演出を表示し、終了後に思い出へ遷移する画面
 struct TicketUsageAnimationView: View {
     let ticket: TicketListItem
     let onAnimationCompleted: () -> Void
