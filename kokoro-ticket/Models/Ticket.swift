@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 
+/// 作成から思い出になるまでのチケット状態を表す
+/// draft → sent → received → requested → completed
 enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
     case draft
     case sent
@@ -31,6 +33,7 @@ enum TicketStatus: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// SwiftDataへ保存するローカルチケット。ownerIDで端末内のユーザーを分離する
 @Model
 final class Ticket {
     @Attribute(.unique) var id: UUID

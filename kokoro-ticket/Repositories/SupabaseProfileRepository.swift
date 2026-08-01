@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// profilesテーブルとPrivate Storageへプロフィールを永続化する
 @MainActor
 final class SupabaseProfileRepository: ProfileRepository {
     private static let avatarBucket = "profile-avatars"

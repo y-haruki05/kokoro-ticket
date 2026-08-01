@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// SwiftDataの下書きとSupabase RPCによる送受信状態を橋渡しするRepository
 @MainActor
 final class SupabaseTicketRepository: TicketRepository {
     private let localRepository: SwiftDataTicketRepository
@@ -51,6 +52,7 @@ final class SupabaseTicketRepository: TicketRepository {
         try localRepository.complete(id: id, at: completedAt)
     }
 
+    /// 下書きを同期した後、RPC内の同一トランザクションで送信を確定する
     func sendTicket(
         _ ticket: TicketListItem,
         to friend: Friend,
@@ -149,6 +151,7 @@ final class SupabaseTicketRepository: TicketRepository {
         try await fetchRemoteTickets(function: "get_completed_tickets", perspective: .local)
     }
 
+    /// RPCが所有者とdraft状態を検証できるよう、送信対象の内容を先に同期する
     private func persistDraft(_ ticket: TicketListItem) async throws {
         guard let ownerID = client.auth.currentUser?.id else {
             throw AppError.authenticatedUserUnavailable
@@ -186,6 +189,7 @@ final class SupabaseTicketRepository: TicketRepository {
         }
     }
 
+    /// RPCが返すエラーコードを画面表示用のAppErrorへ分類する
     private func map(_ error: Error, action: String) -> AppError {
         if let appError = error as? AppError { return appError }
         if let urlError = networkError(from: error) {

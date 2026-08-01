@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 完了チケットを年月ごとにまとめ、新旧順で振り返るアルバム画面
 struct MemoriesView: View {
     let store: TicketStore
     let onCreateTicket: () -> Void

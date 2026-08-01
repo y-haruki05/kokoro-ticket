@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// フレンド検索・申請・承認と、一覧表示用データをまとめて管理するStore
 @MainActor
 @Observable
 final class FriendStore {
@@ -50,6 +51,7 @@ final class FriendStore {
         self.error = error
     }
 
+    /// 申請一覧とフレンド一覧を取得し、画面へ最新状態を反映する
     func reload() async {
         guard !isLoading else { return }
         isLoading = true
@@ -71,6 +73,7 @@ final class FriendStore {
         }
     }
 
+    /// フレンドコードを検索し、自分・申請済み・登録済みの状態を付与する
     func search(friendCode: String, currentProfile: Profile? = nil) async {
         guard !isSearching else { return }
         do {

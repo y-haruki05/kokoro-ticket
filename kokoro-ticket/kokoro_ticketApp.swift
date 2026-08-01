@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 
+// アプリの依存関係を組み立て、認証状態に応じた最初の画面を起動するエントリーポイント
 @main
 struct kokoro_ticketApp: App {
     private let modelContainer: ModelContainer

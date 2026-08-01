@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 完了日と送受信者をアルバム風に表示する思い出一覧専用カード
 struct MemoryTicketCardView: View {
     let ticket: TicketListItem
 

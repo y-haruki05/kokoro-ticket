@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// フレンドコード検索と、相手との関係に応じた申請操作を提供する画面
 struct FriendSearchView: View {
     let store: FriendStore
     var currentProfile: Profile? = nil

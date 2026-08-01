@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// Realtime購読を1ユーザー1接続に保ち、イベント後のStore再取得を調整するクラス
 @MainActor
 @Observable
 final class RealtimeSyncCoordinator {
@@ -18,6 +19,7 @@ final class RealtimeSyncCoordinator {
     @ObservationIgnored
     private let notificationStore: NotificationStore
     @ObservationIgnored
+    /// ユーザー切替時に旧Channelを確実に停止するための購読所有者
     private var subscribedUserID: UUID?
     @ObservationIgnored
     private var retryTask: Task<Void, Never>?
@@ -40,6 +42,7 @@ final class RealtimeSyncCoordinator {
         self.notificationStore = notificationStore
     }
 
+    /// 同じユーザーの重複購読を避け、必要な場合だけChannelを開始する
     func start(userID: UUID) async {
         if subscribedUserID == userID, isConnected || isConnecting {
             return
@@ -117,6 +120,7 @@ final class RealtimeSyncCoordinator {
         }
     }
 
+    /// 接続失敗時に最大5回、1〜16秒の指数バックオフで再接続する
     private func scheduleReconnect(userID: UUID, attempt: Int) {
         guard attempt <= 5, subscribedUserID == userID else { return }
         retryTask?.cancel()
@@ -128,6 +132,7 @@ final class RealtimeSyncCoordinator {
         }
     }
 
+    /// 連続イベントを180ミリ秒でまとめ、Repository再取得により最新状態へ収束させる
     private func receive(_ event: RealtimeEvent) {
         switch event.area {
         case .friends:

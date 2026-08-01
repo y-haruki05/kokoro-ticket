@@ -1,5 +1,6 @@
 import Foundation
 
+/// 通知のページ取得と既読処理をSupabaseなしで再現するRepository
 @MainActor
 final class InMemoryNotificationRepository: NotificationRepository {
     private var values: [AppNotification]

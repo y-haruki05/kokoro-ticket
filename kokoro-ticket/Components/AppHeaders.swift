@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 画面タイトルと補足文の余白・文字組みを統一するヘッダー
 struct AppScreenHeader: View {
     let title: String
     var subtitle: String? = nil

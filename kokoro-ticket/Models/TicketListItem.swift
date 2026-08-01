@@ -1,5 +1,6 @@
 import Foundation
 
+/// statusと送受信者の立場に応じて詳細画面へ表示する操作
 enum TicketDetailAction: String, Identifiable, Hashable {
     case edit
     case delete

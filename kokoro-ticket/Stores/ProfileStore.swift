@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import OSLog
 
+/// ログイン中ユーザーのプロフィールと画像編集状態を管理するStore
 @MainActor
 @Observable
 final class ProfileStore {
@@ -57,6 +58,7 @@ final class ProfileStore {
         self.avatarFeedback = avatarFeedback
     }
 
+    /// 認証済みユーザーのプロフィールを取得し、初期設定の要否を判定する
     func loadProfile(hasAuthenticatedUser: Bool) async {
         guard hasAuthenticatedUser else {
             reset()
@@ -75,6 +77,7 @@ final class ProfileStore {
         isLoading = false
     }
 
+    /// 保存後や画面更新時にプロフィールとアバター画像を再取得する
     func reloadProfile() async {
         isLoading = true
         do {

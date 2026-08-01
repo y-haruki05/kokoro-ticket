@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 
+/// 選択画像をアップロード可能なJPEGへ縮小・圧縮する処理の契約
 protocol ProfileImageProcessing: Sendable {
     func prepareJPEG(from sourceData: Data) throws -> Data
 }

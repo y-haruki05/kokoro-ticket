@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// ローカル下書きとSupabase上の送受信チケットを統合し、状態遷移を提供するStore
 @MainActor
 @Observable
 final class TicketStore {
@@ -23,6 +24,7 @@ final class TicketStore {
     private(set) var completionMessage: String?
     private(set) var lastErrorMessage: String?
 
+    /// SwiftData由来の下書き。リモート一覧とID単位で統合して表示する
     private var localTickets: [TicketListItem] = []
 
     @ObservationIgnored
@@ -111,6 +113,7 @@ final class TicketStore {
         rebuildTickets()
     }
 
+    /// 内部statusと送受信者の立場から、選択カテゴリへ表示するチケットを抽出する
     func tickets(for status: TicketStatus) -> [TicketListItem] {
         let source: [TicketListItem]
         switch status {
@@ -183,6 +186,7 @@ final class TicketStore {
     }
 
     @discardableResult
+    /// 下書きを同期してフレンドへ送信し、draft → sent の結果を一覧へ反映する
     func sendTicket(id: UUID, to friend: Friend) async -> Bool {
         guard !isSending, let ticket = ticket(id: id), ticket.status == .draft else {
             if ticket(id: id)?.status != .draft {
@@ -222,6 +226,7 @@ final class TicketStore {
     }
 
     @discardableResult
+    /// 受取人による受領確認を実行し、sent → received へ更新する
     func acknowledgeTicket(id: UUID) async -> Bool {
         guard !isRequesting else { return false }
         isRequesting = true
@@ -240,6 +245,7 @@ final class TicketStore {
     }
 
     @discardableResult
+    /// 受取人から使用リクエストを送り、received → requested へ更新する
     func requestUsage(id: UUID) async -> Bool {
         guard !isRequesting else { return false }
         isRequesting = true
@@ -265,6 +271,7 @@ final class TicketStore {
     }
 
     @discardableResult
+    /// 送り主が対応完了を確定し、requested → completed として思い出へ反映する
     func completeTicket(id: UUID) async -> Bool {
         guard
             !isCompleting,

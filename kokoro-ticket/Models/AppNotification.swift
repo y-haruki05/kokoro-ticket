@@ -1,5 +1,6 @@
 import Foundation
 
+/// フレンドとチケットの状態変化から生成される通知種別
 enum AppNotificationType: String, Codable, Sendable, CaseIterable {
     case friendRequestReceived = "friend_request_received"
     case friendRequestAccepted = "friend_request_accepted"

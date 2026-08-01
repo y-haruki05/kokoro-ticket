@@ -1,5 +1,6 @@
 import Foundation
 
+/// Previewとテスト向けにフレンド関係と申請状態をメモリ上で管理する
 @MainActor
 final class InMemoryFriendRepository: FriendRepository {
     private let currentUserID: UUID

@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// ここにゃん・説明・任意の導線を組み合わせる共通Empty State
 struct AppEmptyStateView: View {
     let imageName: String
     let title: String

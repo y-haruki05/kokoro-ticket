@@ -1,5 +1,6 @@
 import Foundation
 
+/// フレンド一覧と送信先選択で利用する相手の公開プロフィール
 struct Friend: Identifiable, Hashable, Sendable {
     let id: UUID
     let displayName: String

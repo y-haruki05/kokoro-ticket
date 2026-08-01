@@ -1,5 +1,6 @@
 import Foundation
 
+/// フレンド検索・申請・一覧取得を提供するRepositoryの契約
 @MainActor
 protocol FriendRepository {
     func searchProfile(friendCode: String) async throws -> FriendSearchResult?

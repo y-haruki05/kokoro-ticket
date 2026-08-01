@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 背景色と枠デザインを選び、横長チケットへ即時反映する画面
 struct TicketDesignSelectionView: View {
     @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void

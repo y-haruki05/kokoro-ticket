@@ -1,5 +1,6 @@
 import Foundation
 
+/// 通知から遷移できるアプリ内の詳細画面を型安全に表す
 enum AppDeepLink: Hashable, Sendable {
     case incomingFriendRequest(UUID)
     case friend(UUID)

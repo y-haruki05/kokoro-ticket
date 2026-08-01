@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 画面余白・カード間隔・タップ領域などの共通寸法を定義する
 enum AppLayout {
     static let screenHorizontalPadding: CGFloat = 20
     static let sectionSpacing: CGFloat = 22

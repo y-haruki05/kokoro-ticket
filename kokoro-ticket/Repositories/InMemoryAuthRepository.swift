@@ -1,5 +1,6 @@
 import Foundation
 
+/// Previewとテストで認証状態をメモリ上に再現するRepository
 @MainActor
 final class InMemoryAuthRepository: AuthRepository {
     private var session: AuthSession?

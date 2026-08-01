@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 正式Assetsのここにゃんからチケットへ載せるイラストを選ぶ画面
 struct TicketIllustrationSelectionView: View {
     @Bindable var draft: TicketCreationDraft
     let onBack: () -> Void

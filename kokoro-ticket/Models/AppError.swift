@@ -1,5 +1,6 @@
 import Foundation
 
+/// RepositoryやStoreの失敗を日本語のユーザー表示へ統一するアプリ共通エラー
 enum AppError: Error, LocalizedError, Equatable {
     case missingConfiguration(key: String)
     case invalidConfiguration(key: String, reason: String)

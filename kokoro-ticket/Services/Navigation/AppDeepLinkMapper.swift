@@ -1,5 +1,6 @@
 import Foundation
 
+/// 通知種別とresource情報を、対応するアプリ内遷移へ変換する
 enum AppDeepLinkMapper {
     static func map(_ notification: AppNotification) throws -> AppDeepLink {
         switch (notification.type, notification.resourceType) {

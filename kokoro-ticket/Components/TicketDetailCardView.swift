@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 横長チケットと送受信情報を詳細画面向けにまとめるカード
 struct TicketDetailCardView: View {
     let ticket: TicketListItem
 

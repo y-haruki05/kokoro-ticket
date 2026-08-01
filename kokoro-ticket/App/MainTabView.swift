@@ -1,5 +1,6 @@
 import SwiftUI
 
+// 認証後の主要タブと、通知からの遷移・Realtimeのライフサイクルを管理するView
 @MainActor
 struct MainTabView: View {
     @State private var selection: AppTab = .home
@@ -7,10 +8,12 @@ struct MainTabView: View {
     @State private var friendStore: FriendStore
     @State private var notificationStore: NotificationStore
     @State private var realtimeCoordinator: RealtimeSyncCoordinator
+    /// 通知から解決した遷移先を各タブのNavigationStackへ受け渡す
     @State private var appRouter = AppRouter()
     @State private var ticketPath: [UUID] = []
     @State private var memoriesPath: [UUID] = []
     @State private var profileDeepLink: AppDeepLink?
+    /// 詳細画面では下部タブを隠し、一覧へ戻ったときに再表示するための状態
     @State private var isShowingTicketDetail = false
     @State private var notificationTicketStatus: TicketStatus = .draft
     private let profileStore: ProfileStore

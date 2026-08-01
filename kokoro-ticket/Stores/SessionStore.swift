@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// 認証セッションの復元・登録・ログイン・ログアウトを画面へ提供するStore
 @MainActor
 @Observable
 final class SessionStore {
@@ -33,6 +34,7 @@ final class SessionStore {
         self.pendingConfirmationEmail = pendingConfirmationEmail
     }
 
+    /// 保存済みセッションと認証イベント監視を開始し、起動時のログイン状態を確定する
     func restoreSession() async {
         guard sessionTask == nil else { return }
 
@@ -50,6 +52,7 @@ final class SessionStore {
         isLoading = false
     }
 
+    /// 入力値を検証してログインし、成功時は現在ユーザーを更新する
     func signIn(email: String, password: String) async {
         guard !isLoading else { return }
 

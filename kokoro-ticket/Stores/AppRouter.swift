@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+/// 通知のリソースを検証し、表示可能なタブと詳細画面へ解決するルーター
 @MainActor
 @Observable
 final class AppRouter {
@@ -10,6 +11,7 @@ final class AppRouter {
     private(set) var fallbackTab: DeepLinkTab?
     @ObservationIgnored private var lastResolvedLink: AppDeepLink?
 
+    /// 対応データをStoreから再取得し、安全に表示できる遷移先を決定する
     func resolve(
         notification: AppNotification,
         friendStore: FriendStore,

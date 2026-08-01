@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// 初回ログイン時に表示名を保存し、プロフィール設定完了までを案内する画面
 struct ProfileSetupView: View {
     let store: ProfileStore
     var onCompletionStateChange: (Bool) -> Void = { _ in }

@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// RLSで保護されたRPCを介してフレンド検索・申請・承認を実行する
 @MainActor
 final class SupabaseFriendRepository: FriendRepository {
     private static let avatarBucket = "profile-avatars"

@@ -1,5 +1,6 @@
 import SwiftUI
 
+// 最新チケットを主役に、受取一覧と作成導線を表示するホーム画面
 @MainActor
 struct HomeView: View {
     let ticketStore: TicketStore

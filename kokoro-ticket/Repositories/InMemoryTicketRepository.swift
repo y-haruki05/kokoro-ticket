@@ -1,5 +1,6 @@
 import Foundation
 
+/// チケットの作成から完了までの状態遷移をメモリ上で再現するRepository
 @MainActor
 final class InMemoryTicketRepository: TicketRepository {
     private var tickets: [Ticket]
@@ -55,6 +56,7 @@ final class InMemoryTicketRepository: TicketRepository {
         tickets.removeAll { $0.id == id }
     }
 
+    /// ローカル状態を draft → sent へ進め、送信先のスナップショットを保持する
     func send(id: UUID, to friend: Friend, at sentAt: Date) throws {
         let ticket = try fetchTicket(id: id)
         try require(ticket, status: .draft)
@@ -70,6 +72,7 @@ final class InMemoryTicketRepository: TicketRepository {
         transition(ticket, to: .received, at: receivedAt)
     }
 
+    /// 受領済みチケットを received → requested へ進める
     func requestUsage(id: UUID, at requestedAt: Date) throws {
         let ticket = try fetchTicket(id: id)
         try require(ticket, status: .received)
@@ -77,6 +80,7 @@ final class InMemoryTicketRepository: TicketRepository {
         transition(ticket, to: .requested, at: requestedAt)
     }
 
+    /// 使用リクエスト中のチケットを requested → completed へ進める
     func complete(id: UUID, at completedAt: Date) throws {
         let ticket = try fetchTicket(id: id)
         try require(ticket, status: .requested)

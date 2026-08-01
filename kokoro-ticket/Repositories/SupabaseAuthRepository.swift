@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import Supabase
 
+/// Supabase Authで認証処理を実行し、SDKエラーをアプリ用エラーへ変換する
 @MainActor
 final class SupabaseAuthRepository: AuthRepository {
     private let client: Supabase.SupabaseClient
