@@ -12,6 +12,7 @@ struct ProfileView: View {
     @Binding private var deepLink: AppDeepLink?
 
     private let clipboard: any ClipboardWriting
+    private let showsTutorialInitially: Bool
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isShowingNameEditor = false
@@ -19,6 +20,8 @@ struct ProfileView: View {
     @State private var isShowingAvatarDeleteConfirmation = false
     @State private var showsCopyMessage = false
     @State private var showsAvatarMessage = false
+    @State private var isShowingTutorial = false
+    @State private var didApplyInitialTutorialPresentation = false
 
     init(
         store: ProfileStore,
@@ -28,6 +31,7 @@ struct ProfileView: View {
         clipboard: any ClipboardWriting,
         deepLink: Binding<AppDeepLink?> = .constant(nil),
         showsAvatarDeleteConfirmationInitially: Bool = false,
+        showsTutorialInitially: Bool = false,
         onLogout: @escaping () -> Void
     ) {
         self.store = store
@@ -39,6 +43,8 @@ struct ProfileView: View {
         _isShowingAvatarDeleteConfirmation = State(
             initialValue: showsAvatarDeleteConfirmationInitially
         )
+        _isShowingTutorial = State(initialValue: false)
+        self.showsTutorialInitially = showsTutorialInitially
         self.onLogout = onLogout
     }
 
@@ -68,6 +74,20 @@ struct ProfileView: View {
             .sheet(isPresented: $isShowingNameEditor) {
                 ProfileDisplayNameEditView(store: store)
                     .presentationDetents([.medium, .large])
+            }
+            .fullScreenCover(isPresented: $isShowingTutorial) {
+                TutorialView(mode: .manual) {
+                    isShowingTutorial = false
+                }
+            }
+            .task {
+                guard
+                    showsTutorialInitially,
+                    !didApplyInitialTutorialPresentation
+                else { return }
+                didApplyInitialTutorialPresentation = true
+                await Task.yield()
+                isShowingTutorial = true
             }
             .overlay(alignment: .bottom) {
                 feedbackOverlay
@@ -383,6 +403,19 @@ struct ProfileView: View {
 
     private var supportSection: some View {
         ProfileSettingsSection(title: "サポート") {
+            Button {
+                isShowingTutorial = true
+            } label: {
+                ProfileSettingsRow(
+                    title: "使い方を見る",
+                    systemImage: "book.fill",
+                    detail: "使い方を確認"
+                )
+            }
+            .buttonStyle(.plain)
+
+            ProfileSettingsDivider()
+
             informationLink(
                 title: "お問い合わせ",
                 systemImage: "envelope.fill",

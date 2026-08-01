@@ -24,6 +24,9 @@ struct ProfileVerificationRootView: View {
                 showsAvatarDeleteConfirmationInitially: CommandLine.arguments.contains(
                     "-profile-avatar-delete-confirmation"
                 ),
+                showsTutorialInitially: CommandLine.arguments.contains(
+                    "-profile-tutorial"
+                ),
                 onLogout: {}
             )
         }

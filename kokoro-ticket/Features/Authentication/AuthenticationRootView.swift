@@ -6,6 +6,7 @@ struct AuthenticationRootView: View {
     private let friendRepository: any FriendRepository
     private let notificationRepository: any NotificationRepository
     private let realtimeService: any RealtimeService
+    private let tutorialCompletionStore: any TutorialCompletionStoring
     @State private var sessionStore: SessionStore
     @State private var profileStore: ProfileStore
     @State private var didRestoreSession = false
@@ -13,6 +14,7 @@ struct AuthenticationRootView: View {
     @State private var didFinishInitialSplash = false
     @State private var loadedProfileUserID: UUID?
     @State private var isCompletingProfileSetup = false
+    @State private var hasCompletedTutorial: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
@@ -21,12 +23,23 @@ struct AuthenticationRootView: View {
         friendRepository: any FriendRepository,
         notificationRepository: (any NotificationRepository)? = nil,
         ticketRepository: any TicketRepository,
-        realtimeService: (any RealtimeService)? = nil
+        realtimeService: (any RealtimeService)? = nil,
+        tutorialCompletionStore: (any TutorialCompletionStoring)? = nil
     ) {
         self.ticketRepository = ticketRepository
         self.friendRepository = friendRepository
         self.notificationRepository = notificationRepository ?? InMemoryNotificationRepository()
         self.realtimeService = realtimeService ?? InMemoryRealtimeService()
+        let tutorialStore = tutorialCompletionStore ?? UserDefaultsTutorialCompletionStore()
+        #if DEBUG
+        if CommandLine.arguments.contains("-reset-tutorial") {
+            tutorialStore.hasCompletedTutorial = false
+        }
+        #endif
+        self.tutorialCompletionStore = tutorialStore
+        _hasCompletedTutorial = State(
+            initialValue: tutorialStore.hasCompletedTutorial
+        )
         _sessionStore = State(
             initialValue: SessionStore(repository: authRepository)
         )
@@ -39,10 +52,19 @@ struct AuthenticationRootView: View {
         ZStack {
             destination
 
+            if shouldShowInitialTutorial {
+                TutorialView(
+                    mode: .firstLaunch,
+                    onDismiss: completeInitialTutorial
+                )
+                .transition(.opacity)
+                .zIndex(1)
+            }
+
             if shouldShowSplash {
                 AppSplashView()
                     .transition(.opacity)
-                    .zIndex(1)
+                    .zIndex(2)
             }
         }
         .animation(
@@ -128,6 +150,29 @@ struct AuthenticationRootView: View {
         return false
     }
 
+    private var shouldShowInitialTutorial: Bool {
+        !hasCompletedTutorial && isInitialPreparationComplete
+    }
+
+    private var isInitialPreparationComplete: Bool {
+        guard didReachSplashMinimumDuration, didRestoreSession else {
+            return false
+        }
+
+        if sessionStore.isAuthenticated {
+            return loadedProfileUserID == sessionStore.currentUser?.id
+        }
+
+        return true
+    }
+
+    private func completeInitialTutorial() {
+        tutorialCompletionStore.hasCompletedTutorial = true
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            hasCompletedTutorial = true
+        }
+    }
+
     private var authenticatedLoadingView: some View {
         VStack(spacing: 14) {
             Image("cat_default")
@@ -152,7 +197,10 @@ struct AuthenticationRootView: View {
         authRepository: InMemoryAuthRepository(),
         profileRepository: InMemoryProfileRepository(),
         friendRepository: InMemoryFriendRepository(),
-        ticketRepository: InMemoryTicketRepository()
+        ticketRepository: InMemoryTicketRepository(),
+        tutorialCompletionStore: InMemoryTutorialCompletionStore(
+            hasCompletedTutorial: true
+        )
     )
 }
 
@@ -179,7 +227,10 @@ struct AuthenticationRootView: View {
             profile: profile
         ),
         friendRepository: InMemoryFriendRepository(currentUserID: userID),
-        ticketRepository: InMemoryTicketRepository()
+        ticketRepository: InMemoryTicketRepository(),
+        tutorialCompletionStore: InMemoryTutorialCompletionStore(
+            hasCompletedTutorial: true
+        )
     )
 }
 
@@ -195,6 +246,9 @@ struct AuthenticationRootView: View {
         ),
         profileRepository: InMemoryProfileRepository(currentUserID: userID),
         friendRepository: InMemoryFriendRepository(currentUserID: userID),
-        ticketRepository: InMemoryTicketRepository()
+        ticketRepository: InMemoryTicketRepository(),
+        tutorialCompletionStore: InMemoryTutorialCompletionStore(
+            hasCompletedTutorial: true
+        )
     )
 }
