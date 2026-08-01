@@ -26,7 +26,10 @@ struct AuthenticationVerificationRootView: View {
                 authRepository: InMemoryAuthRepository(),
                 profileRepository: InMemoryProfileRepository(),
                 friendRepository: InMemoryFriendRepository(),
-                ticketRepository: InMemoryTicketRepository()
+                ticketRepository: InMemoryTicketRepository(),
+                tutorialCompletionStore: InMemoryTutorialCompletionStore(
+                    hasCompletedTutorial: true
+                )
             )
         }
     }
